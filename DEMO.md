@@ -1,51 +1,50 @@
-# Demo script (about 75 seconds)
+# Demo script (about 90 seconds)
 
-Open the app before you start. Default sample: lower income, 3 bedrooms, family of 4, $585,000 cost, rate 7.18% (week of Nov 5, 2026), 5-year chart window.
-All numbers below are what the app shows on those defaults. If you change an input, the numbers change.
+Page: https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE. Sample: lower income, 3 bedrooms, family of 4, $585,000 to build, latest weekly rate.
+Every number below is what the app shows on those defaults. If an input changes, the numbers change.
 
-## 1. The problem (0:00 to 0:15)
+## Before you go on stage (5 minutes before)
 
-Point at the summary strip.
+- [ ] Open the page on the claude.ai link (document reading only works there). Click **Reset sample** at the bottom of the Calculator tab.
+- [ ] Documents tab: click **Live demo: read the commitment letter** once. Click **Allow** when asked to let the page use Claude. This also warms up the answer, so the live read on stage comes back almost instantly (answers are reused for 5 minutes).
+- [ ] Remove that practice card (the x on the card). It stays saved in History as the backup.
+- [ ] Reload the page so the calculator is back to the sample, and leave it on the **Calculator** tab.
+- [ ] Say "sample cost" out loud: $585,000 comes from the fictional budget, not a real project.
 
-> "In Orange County, the law caps what a lower-income family can pay for a home. For a family of four, that cap is $2,426 a month, from the state's own income table dated June 23rd. That buys a $243,000 home. This one costs $585,000 to build. The gap is $342,000, for one home."
+## 1. The problem (0:00 to 0:15), Calculator tab
 
-## 2. Show the math is real (0:15 to 0:25)
+> "In Orange County, the law caps what a lower-income family of four can pay for housing at $2,426 a month. That buys a $243,000 home. Building one costs $585,000. The gap is $342,000, for one home."
 
-Point at "How the cap is worked out" and the green "Current" pill.
+## 2. Rates move the gap (0:15 to 0:30), Calculator tab, scroll to the rate chart
 
-> "Every number shows where it came from. Here's the statute formula, the state table it uses, and its date. If the table is replaced, the app says so."
+> "The family's price is capped, so when rates move, the gap moves. In late 2021 this gap was $237,000. In October 2023 it was $353,000. Same home, same family."
 
-Optional: switch the table to "2026 State Income Limits (original)" to show the red "Replaced" warning, then switch back.
+## 3. The live moment (0:30 to 0:55), Documents tab
 
-## 3. The rate moment (0:25 to 0:50)
+Click **Live demo: read the commitment letter**.
 
-Scroll to "Rates move, and the gap moves with them".
+> "Today a finance lead reads every award letter by hand. Here Claude reads it."
 
-> "Here's what nobody plans for. The family's price is capped, so when rates move, the gap moves. In November 2021 rates were 2.98% and this gap was $237,000. Two years later, at 7.79%, it was $353,000. Same home, same family, $117,000 more to raise, just from rates."
+When the card appears, point at the red banner.
 
-Hover the chart near the 2021 low and the October 2023 high.
+> "It found $1.2 million for 12 homes. And it caught that this money is only conditional, and expires in June. A spreadsheet would have counted it."
 
-> "Every quarter point today adds about $4,800 to the gap, per home."
+Click **Apply to calculator**. The page scrolls up and the striped piece on the bar flashes.
 
-## 4. Who closes it (0:50 to 1:05)
+> "So it goes in as pending. The open gap does not drop until the money is signed."
 
-Scroll to "Who closes the gap". Click "Add a source": Donor, Confirmed, 100000. Watch the bar shrink.
+If the read takes more than 30 seconds, click **Use saved result** on the card and keep talking.
 
-> "Today a finance lead assembles this stack by hand. Here each source has a status. Only confirmed money closes the gap. Pending money shows as hatched, so nobody counts it twice."
+## 4. Shrink the gap (0:55 to 1:15), Ways to shrink the gap tab
 
-## 5. The donor line, then close (1:05 to 1:15)
+Click **Add land to the funding stack**.
 
-Point at "What a gift closes". Set the gift to 50000.
+> "A land trust keeps the land: $120,000 off every home. A shared equity loan, like the one I used to buy my first home in the UK, closes another $52,000."
 
-> "And a donor sees exactly what their gift does: $50,000 closes 15% of this gap on one 3-bedroom home before that $100,000 source, more after it."
+## 5. Close (1:15 to 1:30), Action plan tab
 
-Close:
+> "Gap Ledger turns every project into a plan: what each step closes, who to call, and what is not real money yet. It saves a nonprofit finance lead hours on every project."
 
-> "Gap Ledger saves a nonprofit finance lead hours per project, and tells funders the truth about dates and rates."
+## Backup if Claude is not available at all
 
-## Before you present
-
-- [ ] Run `python3 tools/refresh_rates.py` the morning of the demo, so the rate is the latest week.
-- [ ] Reset sample (button at the bottom) before you start.
-- [ ] If the nonprofit gives you a real project cost and real funding sources, use those instead of the sample. Do not show real household data.
-- [ ] Say "sample cost" out loud: $585,000 comes from the fictional Loan Estimate, not a real project.
+Skip step 3's live read: open the **History** tab, click **Add to calculator** on the saved letter, then go to Documents and click **Apply**.

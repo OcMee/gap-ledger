@@ -45,6 +45,16 @@
     }
     addFiles(files);
   });
+  // Live demo: read only the commitment letter, in one click.
+  $("docLive").addEventListener("click", async () => {
+    const f = "09_funding_commitment_letter.pdf";
+    let r = await fetch("sample-docs/" + f).catch(() => null);
+    if (!r || !r.ok) r = await fetch("../sample-docs/" + f).catch(() => null);
+    if (!r || !r.ok) { $("docNote").textContent = "The sample letter could not be loaded."; return; }
+    const file = new File([await r.blob()], f, { type: "application/pdf" });
+    addFiles([file]);
+    $("doc-" + docs[docs.length - 1].id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
   $("docClear").addEventListener("click", () => { [...docs].forEach(d => remove(d.id)); $("docNote").textContent = "Removed all documents."; });
 
   function addFiles(files) {
@@ -109,9 +119,26 @@ funding_commitment: funder_name, funder_type (City|State|Federal|Down-payment pr
 other documents: amount_due, due_date, action_needed`;
   }
 
+  // Most recent saved read of the same file name, used as the stage fallback.
+  const savedFor = d => (history || []).filter(h => h.name === d.name && h.result).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0];
+
+  function useSaved(d) {
+    const h = savedFor(d); if (!h) return;
+    d.fallback = true; d.ctl?.abort(); clearInterval(d.timer);
+    d.result = h.result; d.status = "done"; d.fromSaved = h.savedAt;
+    render();
+  }
+
   async function read(d) {
-    d.status = "reading"; render();
+    d.status = "reading"; d.start = Date.now(); render();
     d.ctl = new AbortController();
+    d.timer = setInterval(() => {
+      const secs = Math.round((Date.now() - d.start) / 1000), t = $("tick-" + d.id), fb = $("fb-" + d.id);
+      if (t) t.textContent = secs;
+      if (fb && secs >= 30 && savedFor(d) && !fb.firstChild) {
+        fb.innerHTML = `Taking a while? <button class="linkbtn" data-saved="${d.id}">Use saved result</button>`;
+      }
+    }, 1000);
     try {
       let text = "", images = [];
       const isPdf = /pdf/i.test(d.file.type) || /\.pdf$/i.test(d.name);
@@ -126,10 +153,27 @@ other documents: amount_due, due_date, action_needed`;
       d.result = out; d.status = "done";
       saveHistory(d);
     } catch (e) {
+      if (d.fallback) return; // the saved result was used instead; nothing to report
       d.status = "failed"; d.error = errorCopy(e?.code);
       if (e?.code === "not_granted" || e?.code === "sampling_disabled") { queue.length = 0; }
+    } finally {
+      clearInterval(d.timer);
     }
     render();
+  }
+
+  // Funding commitments: say plainly when money is not confirmed, and count days to expiry in code.
+  function commitBanner(d) {
+    if (d.result?.doc_type !== "funding_commitment") return "";
+    const st = String(val(d, "commitment_status") || "unknown").toLowerCase();
+    const exp = String(val(d, "expiration_date") || "");
+    let when = "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(exp)) {
+      const days = Math.ceil((new Date(exp + "T23:59:59") - new Date()) / 864e5);
+      when = days < 0 ? ` <b>Expired ${-days} days ago.</b>` : ` Expires in <b>${days} days</b> (${esc(exp)}).`;
+    }
+    if (st === "committed") return `<div class="alert ok"><b>Committed money.</b> Check the funding agreement is signed before counting it.${when}</div>`;
+    return `<div class="alert bad notconf"><b>Not confirmed money.</b> This is ${esc(st === "unknown" ? "not clearly committed" : st)}: it only arrives if the conditions are met, so it is not counted as closing the gap.${when}</div>`;
   }
 
   function errorCopy(code) {
@@ -206,6 +250,12 @@ other documents: amount_due, due_date, action_needed`;
       else $(k).value = v;
     }
     d.applied = true; calc(); render();
+    // Show the audience where the money landed: scroll to the gap bar and highlight the new piece.
+    if (applyPlan(d).some(p => p[0] === "source")) {
+      $("sharedTop").scrollIntoView({ behavior: "smooth", block: "start" });
+      const seg = document.querySelector("#bar .seg-pend") || document.querySelector("#bar .seg-ok");
+      if (seg) { seg.classList.remove("flash"); void seg.offsetWidth; seg.classList.add("flash"); }
+    }
   }
 
   // ---------- household match (pay stubs + bank statements) ----------
@@ -246,8 +296,10 @@ other documents: amount_due, due_date, action_needed`;
         : d.status === "reading" ? `<span class="pill info">Reading\u2026</span>` : `<span class="pill info">Waiting</span>`;
       return `<article class="doc" id="doc-${d.id}">
         <header><div class="docname">${esc(d.name)}</div><div class="dochead">${pill}<button class="linkbtn" data-view="${d.id}">View</button><button class="x" data-remove="${d.id}" aria-label="Remove ${esc(d.name)}" title="Remove this document">\u00d7</button></div></header>
-        ${d.status === "reading" ? `<p class="small muted">Claude is reading this file. This can take up to a minute. <button class="linkbtn" data-stop="${d.id}">Stop</button></p>` : ""}
-        ${d.status === "failed" ? `<p class="small">${esc(d.error)}</p>` : ""}
+        ${d.status === "reading" ? `<p class="small muted">Claude is reading this file… <span class="num" id="tick-${d.id}">${Math.round((Date.now() - d.start) / 1000)}</span> s. <button class="linkbtn" data-stop="${d.id}">Stop</button> <span id="fb-${d.id}"></span></p>` : ""}
+        ${d.status === "failed" ? `<p class="small">${esc(d.error)}${savedFor(d) ? ` <button class="linkbtn" data-saved="${d.id}">Use saved result</button>` : ""}</p>` : ""}
+        ${d.fromSaved ? `<p class="small"><span class="pill warn">Saved from an earlier read</span> ${esc(new Date(d.fromSaved).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</p>` : ""}
+        ${r ? commitBanner(d) : ""}
         ${r ? `<p class="docsum">${esc(r.summary)}</p>
           <div class="tablebox"><table class="facts"><tbody>${r.fields.map(f => `<tr><td>${esc(f.label || f.key)}</td>
             <td class="r num">${f.redacted ? `<span class="pill warn">Redacted</span>` : esc(typeof f.value === "number" ? f.value.toLocaleString("en-US") : f.value ?? "\u2013")}</td>
@@ -264,6 +316,7 @@ other documents: amount_due, due_date, action_needed`;
     if (a) apply(docs.find(d => d.id === a));
     if (s) docs.find(d => d.id === s)?.ctl?.abort();
     if (r) remove(r);
+    if (e.target.dataset.saved) useSaved(docs.find(d => d.id === e.target.dataset.saved));
     if (e.target.dataset.view) view(docs.find(d => d.id === e.target.dataset.view));
   });
 

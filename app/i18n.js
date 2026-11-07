@@ -24,6 +24,7 @@
     optsTitle: ["Ways to shrink the gap", "Formas de reducir la diferencia", "Cách thu hẹp khoảng chênh lệch"],
     mapTitle: ["Projects on the map", "Proyectos en el mapa", "Các dự án trên bản đồ"],
     histTitle: ["Documents read", "Documentos leídos", "Giấy tờ đã đọc"],
+    docLive: ["Live demo: read the commitment letter", "Demostración: leer la carta de compromiso", "Trình diễn: đọc thư cam kết tài trợ"],
     docSamples: ["Load sample documents", "Cargar documentos de ejemplo", "Tải giấy tờ mẫu"],
     dropMain: ["Drop PDFs or photos here", "Suelte aquí PDFs o fotos", "Thả tệp PDF hoặc ảnh vào đây"],
     addLand: ["Add land to the funding stack", "Agregar el terreno a las fuentes de fondos", "Thêm đất vào danh sách nguồn vốn"],
@@ -53,7 +54,7 @@
   function apply() {
     const i = IDX[lang];
     document.documentElement.lang = lang;
-    ["tabCalc", "tabDocs", "tabOpts", "tabPlan", "tabInv", "tabMap", "tabHist", "docsTitle", "optsTitle", "planTitle", "invTitle", "mapTitle", "histTitle", "docSamples", "addLand"]
+    ["tabCalc", "tabDocs", "tabOpts", "tabPlan", "tabInv", "tabMap", "tabHist", "docsTitle", "optsTitle", "planTitle", "invTitle", "mapTitle", "histTitle", "docLive", "docSamples", "addLand"]
       .forEach(id => setText($(id), T[id][i]));
     setText(document.querySelector("h1"), T.h1[i]);
     document.querySelectorAll(".strip .k").forEach((el, n) => setText(el, T["k" + (n + 1)][i]));

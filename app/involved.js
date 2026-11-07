@@ -91,6 +91,37 @@
     catch { $("volText").select(); $("volNote").textContent = "Copy did not work here. The message is selected below: press Ctrl+C (or Cmd+C)."; }
   });
 
-  window.renderInvolved = () => { if (!$("involvedView").hidden) { renderGive(); renderGoods(); } };
-  renderVol(); renderGive(); renderGoods();
+
+  // ---- vehicle donation ----
+  function renderCar() {
+    const sell = $("carMode").value === "sell";
+    $("carValRow").hidden = !sell; $("carAddRow").hidden = !sell;
+    const val = parseFloat($("carVal").value) || 0;
+    const L = window.LAST, open = L ? L.open : 0;
+    $("carOut").innerHTML = !sell
+      ? "The money does not go into the gap, but a reliable car helps a family get to work, keep steady income and qualify for a loan. The program matches the car with a family."
+      : !val ? "Enter your estimate to see what the sale could close."
+      : open > 0 ? `If it sells for about <b>${money(val)}</b>, that closes <b>${(val / open * 100).toFixed(1)}%</b> of the ${money(open)} still open on the home on the Calculator tab.`
+      : `If it sells for about <b>${money(val)}</b>, that money can go to another project.`;
+  }
+  ["carMode", "carVal"].forEach(id => $(id).addEventListener("input", renderCar));
+  $("carAdd").addEventListener("click", () => {
+    const val = Math.round(parseFloat($("carVal").value) || 0); if (!val) return;
+    sources.push({ name: `Donated vehicle sale (${$("carDesc").value.trim() || "estimate"})`, type: "Donor", status: "unconfirmed", amount: val, src: "Donor's estimate; real amount known after sale" });
+    renderSources(); calc();
+    $("carNote").textContent = `Added ${money(val)} to the funding stack as "Funds not confirmed". Change it to Confirmed once the car sells.`;
+  });
+  $("carMsg").addEventListener("click", async () => {
+    const sell = $("carMode").value === "sell";
+    const msg = `Hello,\n\nI would like to donate a vehicle to your affordable homeownership program.\n\n` +
+      `Vehicle: ${$("carDesc").value.trim() || "(year, make, model)"}\n` +
+      `I would like it to: ${sell ? "be sold, with the money going toward building homes" : "go to a family who needs reliable transport"}\n` +
+      `I have the title in my name: (yes / no)\nCar location and pickup times: (where and when)\n\n` +
+      `Please tell me the next steps and the paperwork you need.\n\nThank you.`;
+    $("carText").value = msg; $("carText").hidden = false;
+    try { await navigator.clipboard.writeText(msg); $("carNote").textContent = "Message copied. Paste it into an email to the nonprofit."; }
+    catch { $("carText").select(); $("carNote").textContent = "Copy did not work here. The message is selected below: press Ctrl+C (or Cmd+C)."; }
+  });
+  window.renderInvolved = () => { if (!$("involvedView").hidden) { renderGive(); renderGoods(); renderCar(); } };
+  renderVol(); renderGive(); renderGoods(); renderCar();
 })();
