@@ -1,0 +1,477 @@
+<title>Gap Ledger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a project ledger. Summary strip on top, then input columns left, results right, then rate history full width. */
+  :root {
+    --bg: #f3f5f4; --surface: #ffffff; --ink: #17242b; --muted: #5b6b70; --line: #d5dddb;
+    --accent: #1d5f7a; --accent-soft: #e2eef2;
+    --good: #2f7a4f; --good-soft: #e3f1e8; --bad: #b3362b; --bad-soft: #f8e4e1; --warn: #9a6400; --warn-soft: #fbf0d9;
+    --font-ui: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #11181b; --surface: #182226; --ink: #e6edee; --muted: #93a3a7; --line: #2b383d;
+    --accent: #6fb3cf; --accent-soft: #1d3540; --good: #6cc392; --good-soft: #183327; --bad: #f08a7e; --bad-soft: #3a1f1c;
+    --warn: #e7b85a; --warn-soft: #362a12; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #11181b; --surface: #182226; --ink: #e6edee; --muted: #93a3a7; --line: #2b383d;
+    --accent: #6fb3cf; --accent-soft: #1d3540; --good: #6cc392; --good-soft: #183327; --bad: #f08a7e; --bad-soft: #3a1f1c;
+    --warn: #e7b85a; --warn-soft: #362a12; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-ui); margin: 0; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 16px 0 6px; }
+  p { margin: 0; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .lede { color: var(--muted); max-width: 70ch; margin-top: 6px; }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  a { color: var(--accent); }
+  .muted { color: var(--muted); } .small { font-size: 12.5px; }
+
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .links { display: flex; gap: 12px; font-size: 13px; }
+
+  /* summary strip */
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .strip > div { background: var(--surface); padding: 14px 16px; min-width: 0; }
+  .strip .k { font-size: 12.5px; color: var(--muted); }
+  .strip .v { font-family: var(--font-num); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .strip .f { font-size: 12px; color: var(--muted); font-family: var(--font-num); overflow-wrap: anywhere; }
+  .v.good { color: var(--good); } .v.bad { color: var(--bad); }
+  @media (max-width: 900px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .strip { grid-template-columns: 1fr; } }
+
+  .barbox { margin: 14px 0 4px; }
+  .bar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; background: var(--bad-soft); }
+  .bar > div { min-width: 0; display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 600;
+    color: #fff; white-space: nowrap; overflow: hidden; transition: flex-basis .35s ease; }
+  .seg-fam { background: var(--good); } .seg-ok { background: var(--accent); }
+  .seg-pend { background: repeating-linear-gradient(135deg, var(--accent) 0 6px, transparent 6px 10px); color: var(--ink) !important; }
+  .seg-gap { background: var(--bad); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; margin-top: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  .panel > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+
+  .field { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 4px 10px; align-items: center; padding: 5px 0;
+    border-bottom: 1px solid var(--line); }
+  .field:last-child { border-bottom: 0; }
+  .field label { font-size: 14px; }
+  .field .why { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
+  input, select { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 8px; width: 100%; min-width: 0; }
+  input[type=number] { font-family: var(--font-num); text-align: right; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { font: inherit; font-size: 14px; cursor: pointer; border-radius: 6px; padding: 7px 12px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 5px 10px; font-size: 13px; background: var(--surface); }
+  .seg button[aria-pressed=true] { background: var(--ink); color: var(--surface); }
+
+  .pill { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .pill.ok { background: var(--good-soft); color: var(--good); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.info { background: var(--accent-soft); color: var(--accent); }
+
+  .calc { font-family: var(--font-num); font-size: 12.5px; background: var(--bg); border-radius: 6px; padding: 10px 12px;
+    line-height: 1.7; overflow-wrap: anywhere; }
+  .field:has(select) { grid-template-columns: minmax(0, 1fr) minmax(0, 250px); }
+  table.stack { min-width: 720px; }
+  .stack td:nth-child(1) { width: 26%; } .stack td:nth-child(3) { width: 17%; } .stack td:nth-child(4) { width: 13%; }
+  .calc b { font-weight: 500; color: var(--ink); }
+  .alert { border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-top: 8px; }
+  .alert.warn { background: var(--warn-soft); color: var(--ink); border-left: 3px solid var(--warn); }
+  .alert.bad { background: var(--bad-soft); color: var(--ink); border-left: 3px solid var(--bad); }
+  .alert.ok { background: var(--good-soft); color: var(--ink); border-left: 3px solid var(--good); }
+
+  .tablebox { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { text-align: left; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+    padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  td.r, th.r { text-align: right; } tr.now td { background: var(--accent-soft); font-weight: 600; }
+  .stack td input, .stack td select { padding: 5px 6px; }
+  .x { border: 0; background: none; color: var(--muted); font-size: 18px; padding: 2px 6px; }
+
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { fill: var(--muted); font-family: var(--font-num); font-size: 11px; }
+  .chart .grid line { stroke: var(--line); }
+  .chart .rate { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .chart .gapl { fill: none; stroke: var(--bad); stroke-width: 1.8; }
+  .chart .area { fill: var(--accent-soft); }
+  .chart .areab { fill: var(--bad-soft); }
+  .chart .hair { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart .dot { fill: var(--surface); stroke-width: 2; }
+  .tip { font-family: var(--font-num); font-size: 12.5px; min-height: 1.5em; }
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+  .kpis > div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+  .kpis .k { font-size: 12px; color: var(--muted); } .kpis .v { font-family: var(--font-num); font-size: 18px; }
+  @media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .donor { font-size: 17px; line-height: 1.6; max-width: 62ch; }
+  .donor b { font-family: var(--font-num); font-weight: 500; }
+  footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
+  @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow">Lane 03 · Fund it · Orange County</div>
+      <h1>Does this home pencil, and who closes the gap?</h1>
+      <p class="lede">The price a family can pay is capped by area income. This page works out that cap from the state formula,
+        shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
+    </div>
+    <div class="links"><a href="household.html">Household check (Herrera sample)</a></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <section class="strip" aria-label="Summary">
+    <div><div class="k">Cost to create one home</div><div class="v num" id="sCost"></div><div class="f" id="sCostF"></div></div>
+    <div><div class="k">Affordable price (capped)</div><div class="v num good" id="sPrice"></div><div class="f" id="sPriceF"></div></div>
+    <div><div class="k">Gap per home</div><div class="v num bad" id="sGap"></div><div class="f" id="sGapF"></div></div>
+    <div><div class="k">Still open after confirmed sources</div><div class="v num bad" id="sOpen"></div><div class="f" id="sOpenF"></div></div>
+  </section>
+  <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
+
+  <div class="grid">
+    <!-- LEFT: inputs -->
+    <div class="col">
+      <section class="panel">
+        <header><h2>Household and income limits</h2><span id="tableStatus"></span></header>
+        <div class="field"><label for="tableId">Income limit table</label><select id="tableId"></select></div>
+        <div class="field"><label for="tier">Income tier</label><select id="tier"></select></div>
+        <div class="field"><label for="beds">Bedrooms</label><input id="beds" type="number" min="0" max="7" step="1">
+          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit". Verify.</span></div>
+        <div class="alert" id="tableAlert" hidden></div>
+        <h3>From the table</h3>
+        <div class="calc" id="limitCalc"></div>
+      </section>
+
+      <section class="panel">
+        <header><h2>Cost to create one home</h2><span class="pill info">Sample values</span></header>
+        <div class="field"><label for="cost">Total development cost</label><input id="cost" type="number" step="1000">
+          <span class="why">Sample: $585,000 condo price on the fictional Loan Estimate (doc 04). Replace with the project's land + design + permits + build.</span></div>
+        <div class="field"><label for="homes">Homes in this project</label><input id="homes" type="number" min="1" step="1"></div>
+      </section>
+
+      <section class="panel">
+        <header><h2>Monthly cost items</h2><span class="pill info">Doc 04 ratios</span></header>
+        <div class="field"><label for="down">Down payment %</label><input id="down" type="number" step="0.5"><span class="why">Doc 04: 3%.</span></div>
+        <div class="field"><label for="taxIns">Property tax + insurance, % of price per year</label><input id="taxIns" type="number" step="0.01">
+          <span class="why">Doc 04 escrow $711/mo ÷ $585,000 × 12 = 1.46%.</span></div>
+        <div class="field"><label for="pmi">Mortgage insurance, % of loan per year</label><input id="pmi" type="number" step="0.01">
+          <span class="why">Doc 04: $260/mo ÷ $567,450 × 12 = 0.55%.</span></div>
+        <div class="field"><label for="hoa">HOA dues per month</label><input id="hoa" type="number" step="5"><span class="why">Doc 04: $425.</span></div>
+        <div class="field"><label for="util">Utility allowance per month</label><input id="util" type="number" step="5">
+          <span class="why">Counts toward housing cost in many programs. Enter the local allowance. 0 means not counted.</span></div>
+        <div class="field"><label for="maint">Maintenance per month</label><input id="maint" type="number" step="5"><span class="why">Enter if your program counts it.</span></div>
+      </section>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="col">
+      <section class="panel">
+        <header><h2>How the cap is worked out</h2><span id="tierPill"></span></header>
+        <div class="calc" id="capCalc"></div>
+        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). The statute site was not reachable when this was built,
+          so the low, very low and extremely low multipliers are unverified. The moderate formula was checked against a city document quoting the statute.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>Mortgage rate</h2><span id="rateStatus"></span></header>
+        <div class="field"><label for="rateMode">Rate used</label>
+          <select id="rateMode"><option value="latest">Latest published weekly average</option><option value="custom">Custom rate</option></select></div>
+        <div class="field" id="customRow" hidden><label for="customRate">Custom rate %</label><input id="customRate" type="number" step="0.05"></div>
+        <p class="small muted" id="rateNote" style="margin-top:6px"></p>
+        <h3>If the rate moves</h3>
+        <div class="tablebox"><table id="sens"></table></div>
+        <p class="small muted" style="margin-top:6px">The price is capped by income, so a higher rate buys a smaller loan and the gap grows by the same amount.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>Who closes the gap</h2><button class="primary" id="addSrc">Add a source</button></header>
+        <div class="tablebox"><table class="stack">
+          <thead><tr><th>Source</th><th>Type</th><th>Status</th><th class="r">Per home ($)</th><th>Where the number came from</th><th></th></tr></thead>
+          <tbody id="srcRows"></tbody>
+        </table></div>
+        <p class="small muted" style="margin-top:8px">Only <b>confirmed</b> money counts as closing the gap. Pending and unconfirmed lines show as hatched. This page has no built-in program amounts, because program terms and funding change.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
+        <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
+        <p class="donor" id="donorText" style="margin-top:10px"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- RATE HISTORY -->
+  <section class="panel" style="margin-top:16px">
+    <header><h2>Rates move, and the gap moves with them</h2>
+      <div class="seg" role="group" aria-label="Time window" id="winSeg">
+        <button data-w="1" aria-pressed="false">1 yr</button><button data-w="5" aria-pressed="true">5 yr</button>
+        <button data-w="10" aria-pressed="false">10 yr</button><button data-w="99" aria-pressed="false">Since 2000</button></div></header>
+    <div class="kpis" id="rateKpis"></div>
+    <svg class="chart" id="chart" viewBox="0 0 1000 380" role="img" aria-label="Weekly 30-year mortgage rate and the gap per home at that rate"></svg>
+    <div class="tip" id="tip">Hover or tap the chart to read a week.</div>
+    <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
+  </section>
+
+  <footer>
+    <div><b>Sources.</b> <span id="srcList"></span></div>
+    <div>Explains numbers only. Not legal, lending or investment advice. Check program terms with the program and a housing counselor.
+      Sample values come from the fictional Claude Impact Lab document pack.</div>
+    <div><button id="reset">Reset sample</button></div>
+  </footer>
+</div>
+
+<script src="limits.js"></script>
+<script src="rates.js"></script>
+<script>
+const SAMPLE = { tableId: "state-2026-rev", tier: "li", beds: 3, cost: 585000, homes: 1,
+  down: 3, taxIns: 1.46, pmi: 0.55, hoa: 425, util: 0, maint: 0, rateMode: "latest", customRate: 6.5, gift: 50000,
+  sources: [
+    { name: "City down-payment loan (example)", type: "City", status: "pending", amount: 0, src: "Enter program terms" },
+  ] };
+const TYPES = ["City", "State", "Federal", "Down-payment program", "Lender", "Employer", "Donor", "Earned revenue", "Developer fee / land"];
+const STATUSES = { confirmed: "Confirmed", pending: "Applied / pending", unconfirmed: "Funds not confirmed" };
+const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift"];
+const $ = id => document.getElementById(id);
+const money = x => (x < 0 ? "−$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
+const n = id => parseFloat($(id).value) || 0;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmtDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const TODAY = new Date();
+let sources = [], win = 5;
+
+const pmtFactor = rate => { const r = rate / 100 / 12; return r ? r / (1 - Math.pow(1 + r, -360)) : 1 / 360; };
+const PTS = window.RATES.points;
+const LATEST = PTS[PTS.length - 1];
+
+// ---------- setup ----------
+$("tableId").innerHTML = LIMIT_TABLES.map(t => `<option value="${t.id}">${esc(t.name)}${t.superseded ? " (replaced)" : ""}</option>`).join("");
+$("tier").innerHTML = TIERS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+
+function load(s) {
+  FIELDS.forEach(k => $(k).value = s[k]);
+  sources = s.sources.map(x => ({ ...x }));
+  renderSources(); calc();
+}
+
+function renderSources() {
+  $("srcRows").innerHTML = sources.map((s, i) => `<tr>
+    <td><input id="sn${i}" data-i="${i}" data-k="name" value="${esc(s.name)}" placeholder="Program or funder" aria-label="Source name"></td>
+    <td><select id="st${i}" data-i="${i}" data-k="type" aria-label="Type">${TYPES.map(t => `<option${t === s.type ? " selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><select id="ss${i}" data-i="${i}" data-k="status" aria-label="Status">${Object.entries(STATUSES).map(([k, v]) => `<option value="${k}"${k === s.status ? " selected" : ""}>${v}</option>`).join("")}</select></td>
+    <td><input id="sa${i}" data-i="${i}" data-k="amount" type="number" step="1000" value="${s.amount}" aria-label="Amount per home"></td>
+    <td><input id="sr${i}" data-i="${i}" data-k="src" value="${esc(s.src)}" placeholder="Award letter, NOFA, terms sheet…" aria-label="Source of number"></td>
+    <td><button class="x" data-del="${i}" aria-label="Remove">×</button></td></tr>`).join("");
+}
+$("srcRows").addEventListener("input", e => {
+  const el = e.target, i = el.dataset.i; if (i === undefined) return;
+  sources[i][el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
+});
+$("srcRows").addEventListener("click", e => { const d = e.target.dataset.del; if (d !== undefined) { sources.splice(+d, 1); renderSources(); calc(); } });
+$("addSrc").onclick = () => { sources.push({ name: "", type: "Donor", status: "unconfirmed", amount: 0, src: "" }); renderSources(); calc(); $("sn" + (sources.length - 1)).focus(); };
+
+// ---------- core math ----------
+function model(rate) {
+  const tierT = TIERS.find(t => t.id === $("tier").value);
+  const stateT = LIMIT_TABLES.find(t => t.id === "state-2026-rev");
+  const hh = Math.min(8, Math.max(1, Math.round(n("beds")) + 1));
+  const median = stateT.rows["Median"][hh - 1];
+  const cap = tierT.share * tierT.amiMult * median / 12;
+  const d = n("down") / 100;
+  const perDollar = (1 - d) * (pmtFactor(rate) + n("pmi") / 100 / 12) + n("taxIns") / 100 / 12;
+  const fixed = n("hoa") + n("util") + n("maint");
+  const price = Math.max(0, (cap - fixed) / perDollar);
+  const cost = n("cost");
+  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, gap: Math.max(0, cost - price) };
+}
+const currentRate = () => $("rateMode").value === "custom" ? n("customRate") : LATEST[1];
+
+function calc() {
+  $("customRow").hidden = $("rateMode").value !== "custom";
+  const rate = currentRate();
+  const m = model(rate);
+  const homes = Math.max(1, Math.round(n("homes")));
+
+  // --- table status / staleness ---
+  const t = LIMIT_TABLES.find(x => x.id === $("tableId").value);
+  const ageDays = (TODAY - new Date(t.effective + "T12:00:00")) / 864e5;
+  const newCycle = TODAY.getMonth() >= 4 && TODAY.getFullYear() > new Date(t.effective).getFullYear();
+  let status, alert = null;
+  if (t.superseded) { status = `<span class="pill bad">Replaced</span>`; alert = ["bad", `${t.note} Switch to the revised table.`]; }
+  else if (ageDays > 365 || newCycle) { status = `<span class="pill warn">Check for update</span>`; alert = ["warn", `This table is ${Math.round(ageDays)} days old. HCD usually publishes new limits each spring. Check the source before using these numbers.`]; }
+  else { status = `<span class="pill ok">Current · ${fmtDate(t.effective)}</span>`; }
+  $("tableStatus").innerHTML = status;
+  $("tableAlert").hidden = !alert;
+  if (alert) { $("tableAlert").className = "alert " + alert[0]; $("tableAlert").textContent = alert[1]; }
+  const limitVal = t.rows && t.rows[m.tierT.limitRow] ? t.rows[m.tierT.limitRow][m.hh - 1] : null;
+  $("limitCalc").innerHTML = `
+    Table: <b>${esc(t.name)}</b>, ${esc(t.agency)}, dated ${fmtDate(t.effective)}<br>
+    ${t.superseded ? "" : `Household size: <b>${m.hh}</b> (${n("beds")} bedrooms + 1)<br>`}
+    ${limitVal ? `Eligibility limit, ${esc(m.tierT.limitRow)}: <b>${money(limitVal)}</b> per year<br>` : `Eligibility limit for this tier: <b>not in this table</b><br>`}
+    Median for ${m.hh} people (State table, used by the formula): <b>${money(m.median)}</b><br>
+    <a href="${t.url}" target="_blank" rel="noopener">Open source PDF</a>${t.superseded ? "" : ` · ${esc(t.note)}`}`;
+
+  // --- cap calc ---
+  $("tierPill").innerHTML = m.tierT.verified ? `<span class="pill ok">Formula checked</span>` : `<span class="pill warn">Formula unverified</span>`;
+  $("capCalc").innerHTML = `
+    Monthly cap = ${m.tierT.share * 100}% × ${Math.round(m.tierT.amiMult * 100)}% × ${money(m.median)} ÷ 12 = <b>${money(m.cap)}</b><br>
+    − HOA ${money(n("hoa"))} − utilities ${money(n("util"))} − maintenance ${money(n("maint"))} = <b>${money(m.cap - m.fixed)}</b> left for the loan, tax and insurance<br>
+    Each $1,000 of price costs $${(m.perDollar * 1000).toFixed(2)} a month at ${rate.toFixed(2)}% (loan, mortgage insurance, tax, insurance)<br>
+    Affordable price = ${money(m.cap - m.fixed)} ÷ ${m.perDollar.toFixed(6)} = <b>${money(m.price)}</b>`;
+
+  // --- sources ---
+  const amt = st => sources.filter(s => s.status === st).reduce((a, s) => a + (s.amount || 0), 0);
+  const conf = amt("confirmed"), pend = amt("pending") + amt("unconfirmed");
+  const open = Math.max(0, m.gap - conf);
+  const openIfAll = Math.max(0, m.gap - conf - pend);
+
+  // --- summary strip ---
+  $("sCost").textContent = money(m.cost);
+  $("sCostF").textContent = homes > 1 ? `${homes} homes = ${money(m.cost * homes)}` : "per home";
+  $("sPrice").textContent = money(Math.min(m.price, m.cost));
+  $("sPriceF").textContent = `${m.tierT.name.toLowerCase()}, ${m.hh} people, ${rate.toFixed(2)}%`;
+  $("sGap").textContent = money(m.gap);
+  $("sGapF").textContent = homes > 1 ? `project: ${money(m.gap * homes)}` : `${m.cost ? Math.round(m.gap / m.cost * 100) : 0}% of cost`;
+  $("sOpen").textContent = money(open);
+  $("sOpenF").textContent = pend ? `${money(openIfAll)} if pending money comes through` : (conf ? `after ${money(conf)} confirmed` : "no confirmed sources yet");
+
+  const whole = Math.max(m.cost, 1);
+  const segs = [
+    ["seg-fam", "Family's price", Math.min(m.price, m.cost)],
+    ["seg-ok", "Confirmed", Math.min(conf, m.gap)],
+    ["seg-pend", "Pending / unconfirmed", Math.min(pend, Math.max(0, m.gap - conf))],
+    ["seg-gap", "Open gap", openIfAll],
+  ].filter(s => s[2] > 0.5);
+  $("bar").innerHTML = segs.map(([c, l, v]) => `<div class="${c}" style="flex-basis:${(v / whole * 100).toFixed(2)}%" title="${l}: ${money(v)}">${v / whole > .14 ? l + " " + money(v) : ""}</div>`).join("");
+  const sw = { "seg-fam": "var(--good)", "seg-ok": "var(--accent)", "seg-pend": "repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 5px)", "seg-gap": "var(--bad)" };
+  $("legend").innerHTML = segs.map(([c, l, v]) => `<span><i style="background:${sw[c]}"></i>${l}: <span class="num">${money(v)}</span></span>`).join("");
+
+  // --- rate status ---
+  const rAge = (TODAY - new Date(LATEST[0] + "T12:00:00")) / 864e5;
+  $("rateStatus").innerHTML = $("rateMode").value === "custom" ? `<span class="pill info">Custom</span>`
+    : rAge > 14 ? `<span class="pill warn">Stale · ${fmtDate(LATEST[0])}</span>` : `<span class="pill ok">${LATEST[1].toFixed(2)}% · ${fmtDate(LATEST[0])}</span>`;
+  $("rateNote").innerHTML = `${esc(window.RATES.name)}. Series <a href="${window.RATES.url}" target="_blank" rel="noopener">${window.RATES.series}</a>, data pulled ${fmtDate(window.RATES.fetched)}.`
+    + (rAge > 14 && $("rateMode").value !== "custom" ? ` Latest week is ${Math.round(rAge)} days old: run tools/refresh_rates.py.` : "");
+
+  // --- sensitivity ---
+  const rows = [];
+  for (let dlt = -1; dlt <= 1.0001; dlt += 0.25) {
+    const r = rate + dlt, mm = model(r);
+    rows.push(`<tr class="${Math.abs(dlt) < 1e-9 ? "now" : ""}"><td class="num">${r.toFixed(2)}%${Math.abs(dlt) < 1e-9 ? " (now)" : ""}</td>
+      <td class="r num">${money(mm.price)}</td><td class="r num">${money(mm.gap)}</td>
+      <td class="r num">${Math.abs(dlt) < 1e-9 ? "–" : (mm.gap - m.gap >= 0 ? "+" : "") + money(mm.gap - m.gap)}</td></tr>`);
+  }
+  $("sens").innerHTML = `<thead><tr><th>Rate</th><th class="r">Affordable price</th><th class="r">Gap per home</th><th class="r">Change</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+
+  // --- donor ---
+  const gift = n("gift");
+  const target = open > 0 ? open : m.gap;
+  if (gift <= 0 || m.gap <= 0) {
+    $("donorText").innerHTML = m.gap <= 0 ? "This home pencils without help at these inputs." : "Enter a gift amount.";
+  } else {
+    const share = gift / target;
+    const homesClosed = Math.floor(gift / target);
+    const unit = `${m.hh - 1}-bedroom home for a ${m.tierT.name.toLowerCase()} family of ${m.hh}`;
+    $("donorText").innerHTML = share >= 1
+      ? `Your <b>${money(gift)}</b> closes the open gap on <b>${homesClosed}</b> ${homesClosed === 1 ? "home" : "homes"} (${money(target)} each), a ${unit}.`
+        + (homes > 1 ? ` The project has ${homes} homes.` : "")
+      : `Your <b>${money(gift)}</b> closes <b>${Math.round(share * 100)}%</b> of the ${open > 0 && conf ? "remaining " : ""}gap on one ${unit}. `
+        + `It covers ${money(gift)} of the ${money(target)} between what the home costs to build (${money(m.cost)}) and what the family can pay (${money(Math.min(m.price, m.cost))})`
+        + `${conf ? ` after ${money(conf)} in confirmed sources` : ""}.`;
+  }
+
+  drawChart();
+  $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
+    <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
+    <a href="${window.RATES.url}" target="_blank" rel="noopener">Freddie Mac PMMS via FRED</a> · CA Health &amp; Safety Code 50052.5 · Fictional Loan Estimate (doc 04)`;
+}
+
+// ---------- chart ----------
+function drawChart() {
+  const svg = $("chart");
+  const start = new Date(LATEST[0]); start.setFullYear(start.getFullYear() - win);
+  const pts = PTS.filter(p => new Date(p[0]) >= start);
+  const gaps = pts.map(p => model(p[1]).gap);
+  const rates = pts.map(p => p[1]);
+  const L = 62, R = 938, T1 = 16, B1 = 160, T2 = 200, B2 = 344;
+  const rMin = Math.floor(Math.min(...rates)), rMax = Math.ceil(Math.max(...rates));
+  const gMin = Math.min(...gaps), gMax = Math.max(...gaps);
+  const gStep = niceStep((gMax - gMin) || 1000);
+  const g0 = Math.floor(gMin / gStep) * gStep, g1 = Math.ceil(gMax / gStep) * gStep || g0 + gStep;
+  const t0 = new Date(pts[0][0]).getTime(), t1 = new Date(pts[pts.length - 1][0]).getTime();
+  const x = d => L + (new Date(d).getTime() - t0) / (t1 - t0 || 1) * (R - L);
+  const y1 = v => B1 - (v - rMin) / (rMax - rMin || 1) * (B1 - T1);
+  const y2 = v => B2 - (v - g0) / (g1 - g0 || 1) * (B2 - T2);
+  const path = (ys) => pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + ys[i].toFixed(1)).join("");
+  const r1 = rates.map(y1), r2 = gaps.map(y2);
+  let h = `<g class="grid">`;
+  const rStep = rMax - rMin > 6 ? 2 : 1;
+  for (let v = rMin; v <= rMax; v += rStep) h += `<line x1="${L}" x2="${R}" y1="${y1(v)}" y2="${y1(v)}"/>`;
+  for (let v = g0; v <= g1 + 1; v += gStep) h += `<line x1="${L}" x2="${R}" y1="${y2(v)}" y2="${y2(v)}"/>`;
+  h += `</g>`;
+  for (let v = rMin; v <= rMax; v += rStep) h += `<text x="${L - 8}" y="${y1(v) + 4}" text-anchor="end">${v}%</text>`;
+  for (let v = g0; v <= g1 + 1; v += gStep) h += `<text x="${L - 8}" y="${y2(v) + 4}" text-anchor="end">${v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "k"}</text>`;
+  h += `<text x="${L}" y="${T1 - 4}" style="fill:var(--accent)">30-yr rate</text><text x="${L}" y="${T2 - 6}" style="fill:var(--bad)">Gap per home at that rate</text>`;
+  // year ticks
+  const y0 = new Date(t0).getFullYear(), yN = new Date(t1).getFullYear(), yStep = Math.max(1, Math.ceil((yN - y0) / 8));
+  for (let yr = y0 + 1; yr <= yN; yr += yStep) { const xx = x(yr + "-01-01"); h += `<line x1="${xx}" x2="${xx}" y1="${B2}" y2="${B2 + 4}" style="stroke:var(--muted)"/><text x="${xx}" y="${B2 + 18}" text-anchor="middle">${yr}</text>`; }
+  h += `<path class="area" d="${path(r1)}L${R} ${B1}L${L} ${B1}Z"/><path class="rate" d="${path(r1)}"/>`;
+  h += `<path class="areab" d="${path(r2)}L${R} ${B2}L${L} ${B2}Z"/><path class="gapl" d="${path(r2)}"/>`;
+  const lx = x(pts[pts.length - 1][0]);
+  h += `<circle class="dot" cx="${lx}" cy="${r1[r1.length - 1]}" r="4" style="stroke:var(--accent)"/><circle class="dot" cx="${lx}" cy="${r2[r2.length - 1]}" r="4" style="stroke:var(--bad)"/>`;
+  h += `<g id="hover" visibility="hidden"><line class="hair" id="hl" y1="${T1}" y2="${B2}"/><circle class="dot" id="hd1" r="4" style="stroke:var(--accent)"/><circle class="dot" id="hd2" r="4" style="stroke:var(--bad)"/></g>`;
+  h += `<rect x="${L}" y="${T1}" width="${R - L}" height="${B2 - T1}" fill="transparent" id="hit"/>`;
+  svg.innerHTML = h;
+
+  // KPIs for the window
+  const iMin = rates.indexOf(Math.min(...rates)), iMax = rates.indexOf(Math.max(...rates));
+  $("rateKpis").innerHTML = [
+    ["Lowest rate in window", `${rates[iMin].toFixed(2)}%`, fmtDate(pts[iMin][0])],
+    ["Highest rate in window", `${rates[iMax].toFixed(2)}%`, fmtDate(pts[iMax][0])],
+    ["Gap at lowest → highest", `${money(gaps[iMin])} → ${money(gaps[iMax])}`, `swing ${money(gaps[iMax] - gaps[iMin])}`],
+    ["Each +0.25% adds", money(model(currentRate() + 0.25).gap - model(currentRate()).gap), "to the gap, at today's rate"],
+  ].map(([k, v, s]) => `<div><div class="k">${k}</div><div class="v">${v}</div><div class="k">${s}</div></div>`).join("");
+
+  const hit = $("hit");
+  const move = ev => {
+    const pt = svg.createSVGPoint(); const e = ev.touches ? ev.touches[0] : ev;
+    pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const tt = t0 + (p.x - L) / (R - L) * (t1 - t0);
+    let i = 0, best = Infinity; pts.forEach((q, k) => { const dd = Math.abs(new Date(q[0]).getTime() - tt); if (dd < best) { best = dd; i = k; } });
+    const xx = x(pts[i][0]);
+    $("hover").setAttribute("visibility", "visible");
+    $("hl").setAttribute("x1", xx); $("hl").setAttribute("x2", xx);
+    $("hd1").setAttribute("cx", xx); $("hd1").setAttribute("cy", r1[i]); $("hd2").setAttribute("cx", xx); $("hd2").setAttribute("cy", r2[i]);
+    $("tip").textContent = `Week of ${fmtDate(pts[i][0])}: rate ${rates[i].toFixed(2)}%, affordable price ${money(model(rates[i]).price)}, gap ${money(gaps[i])}`;
+  };
+  hit.addEventListener("mousemove", move); hit.addEventListener("touchstart", move, { passive: true }); hit.addEventListener("touchmove", move, { passive: true });
+  hit.addEventListener("mouseleave", () => $("hover").setAttribute("visibility", "hidden"));
+}
+function niceStep(range) { const raw = range / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+
+// ---------- wiring ----------
+FIELDS.forEach(k => $(k).addEventListener("input", calc));
+$("winSeg").addEventListener("click", e => { const w = e.target.dataset.w; if (!w) return; win = +w;
+  [...$("winSeg").children].forEach(b => b.setAttribute("aria-pressed", b === e.target)); drawChart(); });
+$("reset").onclick = () => load(SAMPLE);
+load(SAMPLE);
+</script>
