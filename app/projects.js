@@ -1,0 +1,30 @@
+// SAMPLE PROJECTS: fictional, for the demo only. Project names, home counts, costs and funding amounts are invented.
+// City locations are real city centers (approximate), used only to place pins. No real sites, owners or funders.
+// Laurel Glen Commons matches the fictional sample documents 09 and 10.
+window.PROJECTS = [
+  { id: "laurel-glen", name: "Laurel Glen Commons", city: "Garden Grove", lat: 33.774, lng: -117.941,
+    homes: 12, beds: 3, tier: "li", cost: 585000, stage: "Permits",
+    sources: [{ name: "Westbrook County Housing Trust (fictional)", type: "City", status: "pending", amount: 100000, src: "Doc 09, conditional, expires 2027-06-30" }] },
+  { id: "almond-court", name: "Almond Court Townhomes", city: "Santa Ana", lat: 33.745, lng: -117.868,
+    homes: 8, beds: 2, tier: "vli", cost: 540000, stage: "Fundraising",
+    sources: [{ name: "City down-payment loan (sample)", type: "City", status: "confirmed", amount: 60000, src: "Sample" }] },
+  { id: "citrus-row", name: "Citrus Row", city: "Anaheim", lat: 33.836, lng: -117.914,
+    homes: 16, beds: 3, tier: "li", cost: 610000, stage: "Land secured",
+    sources: [{ name: "State program (sample)", type: "State", status: "confirmed", amount: 80000, src: "Sample" },
+              { name: "Donor pledge (sample)", type: "Donor", status: "pending", amount: 50000, src: "Sample" }] },
+  { id: "canyon-view", name: "Canyon View Co-op", city: "Irvine", lat: 33.684, lng: -117.826,
+    homes: 20, beds: 2, tier: "mod", cost: 690000, stage: "Design",
+    sources: [{ name: "Employer housing fund (sample)", type: "Employer", status: "confirmed", amount: 40000, src: "Sample" }] },
+  { id: "harbor-lane", name: "Harbor Lane Cottages", city: "Fullerton", lat: 33.870, lng: -117.925,
+    homes: 6, beds: 2, tier: "li", cost: 520000, stage: "Looking for land", sources: [] },
+  { id: "bayside-flats", name: "Bayside Flats", city: "Costa Mesa", lat: 33.641, lng: -117.919,
+    homes: 10, beds: 1, tier: "li", cost: 470000, stage: "Fundraising",
+    sources: [{ name: "Bank grant (sample)", type: "Lender", status: "unconfirmed", amount: 70000, src: "Sample" }] },
+  { id: "seawind", name: "Seawind Homes", city: "Huntington Beach", lat: 33.660, lng: -117.999,
+    homes: 14, beds: 3, tier: "mod", cost: 720000, stage: "Under construction",
+    sources: [{ name: "Housing trust loan (sample)", type: "City", status: "confirmed", amount: 120000, src: "Sample" }] },
+  { id: "old-towne", name: "Old Towne Commons", city: "Orange", lat: 33.788, lng: -117.853,
+    homes: 9, beds: 3, tier: "li", cost: 600000, stage: "Permits",
+    sources: [{ name: "Federal HOME funds (sample)", type: "Federal", status: "confirmed", amount: 90000, src: "Sample" },
+              { name: "Employer match (sample)", type: "Employer", status: "pending", amount: 30000, src: "Sample" }] },
+];

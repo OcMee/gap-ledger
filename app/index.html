@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Gap Ledger</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,7 +90,7 @@
 
   .calc { font-family: var(--font-num); font-size: 12.5px; background: var(--bg); border-radius: 6px; padding: 10px 12px;
     line-height: 1.7; overflow-wrap: anywhere; }
-  .field:has(select) { grid-template-columns: minmax(0, 1fr) minmax(0, 250px); }
+  .field:has(select) { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
   table.stack { min-width: 720px; }
   .stack td:nth-child(1) { width: 26%; } .stack td:nth-child(3) { width: 17%; } .stack td:nth-child(4) { width: 13%; }
   .calc b { font-weight: 500; color: var(--ink); }
@@ -124,6 +125,63 @@
 
   .donor { font-size: 17px; line-height: 1.6; max-width: 62ch; }
   .donor b { font-family: var(--font-num); font-weight: 500; }
+  .drop { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 22px 16px; margin-top: 12px;
+    border: 2px dashed var(--line); border-radius: 10px; cursor: pointer; background: var(--bg); }
+  .drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .applyrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .doclist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; margin-top: 12px; }
+  .doc { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+  .doc > header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  #docViewer { width: min(960px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--surface); color: var(--ink); }
+  #docViewer::backdrop { background: rgba(10, 20, 24, .6); }
+  .viewerbar { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .viewerbody { padding: 14px; display: grid; gap: 14px; justify-items: center; background: var(--bg); }
+  .docpage { width: 100%; max-width: 900px; height: auto; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); background: #fff; }
+  .dochead { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .doc .x:hover { color: var(--bad); }
+  .docname { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .docsum { font-size: 14px; }
+  table.facts td { font-size: 13px; padding: 4px 6px; }
+  .quote { color: var(--muted); font-size: 12px; font-style: italic; }
+  .docflags { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .docflags li { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
+  .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
+  button:disabled { opacity: .55; cursor: default; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tabs a:hover { color: var(--ink); }
+  .tabs .count { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+  .mapgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; margin-top: 12px; }
+  @media (max-width: 900px) { .mapgrid { grid-template-columns: 1fr; } }
+  .mapbox { min-width: 0; }
+  #mapSvg { width: 100%; max-height: 640px; height: auto; display: block; border: 1px solid var(--line); border-radius: 10px; }
+  #mapSvg .land { fill: var(--surface); }
+  #mapSvg .ocean { fill: var(--accent-soft); }
+  #mapSvg .coast { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  #mapSvg .sea { fill: var(--accent); font: italic 14px var(--font-ui); }
+  #mapSvg .town { fill: var(--muted); }
+  #mapSvg .townl { fill: var(--muted); font: 12px var(--font-ui); }
+  #mapSvg .pin { cursor: pointer; }
+  #mapSvg .pin circle { stroke: var(--surface); stroke-width: 2; }
+  #mapSvg .pin.ok circle { fill: var(--good); } #mapSvg .pin.warn circle { fill: var(--warn); } #mapSvg .pin.bad circle { fill: var(--bad); }
+  #mapSvg .pin.sel circle { stroke: var(--ink); stroke-width: 3; }
+  #mapSvg .pin:focus { outline: none; } #mapSvg .pin:focus circle { stroke: var(--ink); stroke-width: 3; }
+  #mapSvg .pinlabel, #mapSvg .pinn { pointer-events: none; }
+  #mapSvg .pinn { fill: #fff; font: 600 12px var(--font-num); }
+  #mapSvg .pinl { fill: var(--ink); font: 600 13px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  #mapSvg .pins { fill: var(--muted); font: 11.5px var(--font-num); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .flexrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #histTable { min-width: 680px; }
+  #histTable td { font-size: 13.5px; }
+  #histTable .acts { white-space: nowrap; display: flex; gap: 10px; }
+  #histTable .sum { max-width: 46ch; }
   footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
   @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
 </style>
@@ -139,6 +197,55 @@
     <div class="links"><a href="household.html">Household check (Herrera sample)</a></div>
   </div>
 
+  <nav class="tabs" aria-label="Views">
+    <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
+    <a href="#map" id="tabMap">Map</a>
+    <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
+  </nav>
+
+  <section id="mapView" hidden aria-labelledby="mapTitle">
+    <div class="panel">
+      <header><h2 id="mapTitle">Projects on the map</h2><span class="pill warn">Sample projects, fictional numbers</span></header>
+      <p class="small muted">Each pin is a sample affordable-ownership project. Pin size shows how many homes; color shows how much of each home's gap is still open after confirmed funding.
+        Gaps use the same formula, income table and mortgage rate as the Calculator.</p>
+      <div class="applyrow">
+        <select id="mapFilter" aria-label="Filter by income tier" style="max-width:220px"></select>
+        <select id="mapBeds" aria-label="Filter by bedrooms" style="max-width:160px"><option value="">Any bedrooms</option><option value="1">1 bedroom</option><option value="2">2 bedrooms</option><option value="3">3+ bedrooms</option></select>
+        <span class="legend" style="margin:0"><span><i style="background:var(--good)"></i>Fully funded</span><span><i style="background:var(--warn)"></i>Under 25% open</span><span><i style="background:var(--bad)"></i>25%+ open</span></span>
+      </div>
+      <div class="mapgrid">
+        <div class="mapbox"><svg id="mapSvg" viewBox="0 0 900 600" role="group" aria-label="Schematic map of Orange County with sample projects"></svg>
+          <p class="small muted">Schematic map: city positions are approximate and the coastline is simplified.</p></div>
+        <div id="mapCard" class="panel" style="align-self:start"></div>
+      </div>
+      <h3>All projects</h3>
+      <p class="small" id="mapTotals"></p>
+      <div class="tablebox"><table style="min-width:560px">
+        <thead><tr><th>Project</th><th class="r">Homes</th><th>Size and buyers</th><th class="r">Gap per home</th><th class="r">Still open</th></tr></thead>
+        <tbody id="mapList"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="historyView" hidden aria-labelledby="histTitle">
+    <div class="panel">
+      <header><h2 id="histTitle">Documents read</h2><button id="histClearAll" hidden>Delete all history</button></header>
+      <p class="small muted">Every document Claude finishes reading is saved here, with what it found and when. History stays in this browser on this computer only.
+        Nobody else can see it, and it is lost if browser data is cleared. Delete anything you no longer need.</p>
+      <div class="alert warn">Saved files stay on this computer until you delete them. Do not keep real household documents here.</div>
+      <div class="applyrow" id="histTools" hidden>
+        <input id="histSearch" type="search" placeholder="Search by file name, type or text" aria-label="Search history" style="max-width:340px">
+        <select id="histType" aria-label="Filter by type" style="max-width:220px"><option value="">All types</option></select>
+      </div>
+      <p class="small" id="histEmpty">No documents yet. Read a document on the Calculator tab and it will show up here.</p>
+      <div class="tablebox"><table id="histTable" hidden>
+        <thead><tr><th>Read on</th><th>File</th><th>Type</th><th>What it says</th><th></th></tr></thead>
+        <tbody id="histRows"></tbody>
+      </table></div>
+      <p class="small muted" id="histNote" role="status" style="margin-top:8px"></p>
+    </div>
+  </section>
+
+  <div id="calcView">
   <!-- SUMMARY -->
   <section class="strip" aria-label="Summary">
     <div><div class="k">Cost to create one home</div><div class="v num" id="sCost"></div><div class="f" id="sCostF"></div></div>
@@ -148,6 +255,28 @@
   </section>
   <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
 
+  <!-- DOCUMENTS -->
+  <section class="panel" style="margin-top:16px" aria-labelledby="docsTitle">
+    <header><h2 id="docsTitle">Read documents</h2><span class="pill info">Claude reads, code does the math</span></header>
+    <p class="small muted">Pay stubs, bank statements, Loan Estimates, purchase contracts, development budgets and funding commitment letters.
+      Each value comes with a quote from the document. Nothing changes in the calculator until you click Apply.</p>
+    <div class="alert warn">Use only fictional or properly redacted documents. Files are sent to Claude on your claude.ai account. Blacked-out values show as "Redacted", never guessed.</div>
+    <p class="small" id="docUnavailable" style="margin-top:10px">Document reading works on the claude.ai copy of this page, where Claude can be allowed to read files:
+      <a href="https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE" target="_blank" rel="noopener">open it here</a>.</p>
+    <div id="docControls" hidden>
+      <label class="drop" id="docDrop" for="docInput">
+        <span><b>Drop PDFs or photos here</b>, or click to choose files</span>
+        <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
+        <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
+      </label>
+      <div class="applyrow"><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
+        <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
+    </div>
+    <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
+    <div id="docList" class="doclist"></div>
+    <div id="docHousehold"></div>
+  </section>
+
   <div class="grid">
     <!-- LEFT: inputs -->
     <div class="col">
@@ -156,7 +285,7 @@
         <div class="field"><label for="tableId">Income limit table</label><select id="tableId"></select></div>
         <div class="field"><label for="tier">Income tier</label><select id="tier"></select></div>
         <div class="field"><label for="beds">Bedrooms</label><input id="beds" type="number" min="0" max="7" step="1">
-          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit". Verify.</span></div>
+          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit" (studio = 1, 3-bedroom = 4).</span></div>
         <div class="alert" id="tableAlert" hidden></div>
         <h3>From the table</h3>
         <div class="calc" id="limitCalc"></div>
@@ -188,8 +317,8 @@
       <section class="panel">
         <header><h2>How the cap is worked out</h2><span id="tierPill"></span></header>
         <div class="calc" id="capCalc"></div>
-        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). The statute site was not reachable when this was built,
-          so the low, very low and extremely low multipliers are unverified. The moderate formula was checked against a city document quoting the statute.</p>
+        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). Lower, extremely low and moderate income formulas were checked against
+          published copies of the statute, not the official code site. The very low income formula is still unverified.</p>
       </section>
 
       <section class="panel">
@@ -212,6 +341,36 @@
         <p class="small muted" style="margin-top:8px">Only <b>confirmed</b> money counts as closing the gap. Pending and unconfirmed lines show as hatched. This page has no built-in program amounts, because program terms and funding change.</p>
       </section>
 
+      <section class="panel" aria-labelledby="optsTitle">
+        <header><h2 id="optsTitle">Ways to shrink the gap</h2><span class="pill info">Try options</span></header>
+
+        <h3>Rate buydown</h3>
+        <div class="field"><label for="bd">Lower the rate by (%)</label><input id="bd" type="number" min="0" max="3" step="0.125">
+          <span class="why">Paid up front by a seller, builder or program. 0 means no buydown.</span></div>
+        <div class="field"><label for="ppq">Points per 0.25% lower</label><input id="ppq" type="number" min="0" step="0.25">
+          <span class="why">1 point = 1% of the loan. About 1 point per 0.25% is a common rule of thumb; lenders price this differently. Get a real quote.</span></div>
+        <div class="calc" id="bdCalc"></div>
+
+        <h3>Community land trust</h3>
+        <div class="field"><label for="landCost">Land cost per home</label><input id="landCost" type="number" step="1000">
+          <span class="why">Sample: $1,440,000 land line ÷ 12 homes on the fictional budget (doc 10).</span></div>
+        <div class="field"><label for="landStatus">Is the land already secured?</label>
+          <select id="landStatus"><option value="confirmed">Yes, the trust owns or has it</option><option value="pending">Applied / pending</option><option value="unconfirmed">Not confirmed</option></select></div>
+        <div class="applyrow"><button id="addLand">Add land to the funding stack</button></div>
+        <p class="small muted" style="margin-top:6px">The trust keeps the land and the family buys only the house, so the land cost leaves the family's price. The land still has to be paid for, so it shows as a funding line. In return, resale prices are capped so the home stays affordable for the next family.</p>
+
+        <h3>Co-buyers</h3>
+        <div class="field"><label for="cb1Inc">Household 1 income (yearly)</label><input id="cb1Inc" type="number" step="1000">
+          <span class="why">Sample: Herrera pay stubs, year-to-date average (docs 01b and 02).</span></div>
+        <div class="field"><label for="cb1Size">Household 1 people</label><input id="cb1Size" type="number" min="1" max="8" step="1"></div>
+        <div class="field"><label for="cb2Inc">Household 2 income (yearly)</label><input id="cb2Inc" type="number" step="1000">
+          <span class="why">A relative or friend buying together. 0 means no co-buyer.</span></div>
+        <div class="field"><label for="cb2Size">Household 2 people</label><input id="cb2Size" type="number" min="0" max="8" step="1"></div>
+        <div class="field"><label for="cbShare">Share of income for housing %</label><input id="cbShare" type="number" min="20" max="45" step="1"></div>
+        <div class="calc" id="cbCalc"></div>
+        <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
+      </section>
+
       <section class="panel">
         <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
         <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
@@ -232,6 +391,13 @@
     <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
   </section>
 
+  </div><!-- /calcView -->
+
+  <dialog id="docViewer" aria-labelledby="docViewerTitle">
+    <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
+    <div id="docViewerBody" class="viewerbody"></div>
+  </dialog>
+
   <footer>
     <div><b>Sources.</b> <span id="srcList"></span></div>
     <div>Explains numbers only. Not legal, lending or investment advice. Check program terms with the program and a housing counselor.
@@ -245,12 +411,14 @@
 <script>
 const SAMPLE = { tableId: "state-2026-rev", tier: "li", beds: 3, cost: 585000, homes: 1,
   down: 3, taxIns: 1.46, pmi: 0.55, hoa: 425, util: 0, maint: 0, rateMode: "latest", customRate: 6.5, gift: 50000,
+  bd: 0, ppq: 1, landCost: 120000, landStatus: "confirmed", cb1Inc: 89219, cb1Size: 4, cb2Inc: 0, cb2Size: 0, cbShare: 30,
   sources: [
     { name: "City down-payment loan (example)", type: "City", status: "pending", amount: 0, src: "Enter program terms" },
   ] };
 const TYPES = ["City", "State", "Federal", "Down-payment program", "Lender", "Employer", "Donor", "Earned revenue", "Developer fee / land"];
 const STATUSES = { confirmed: "Confirmed", pending: "Applied / pending", unconfirmed: "Funds not confirmed" };
-const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift"];
+const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift",
+  "bd", "ppq", "landCost", "landStatus", "cb1Inc", "cb1Size", "cb2Inc", "cb2Size", "cbShare"];
 const $ = id => document.getElementById(id);
 const money = x => (x < 0 ? "−$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
 const n = id => parseFloat($(id).value) || 0;
@@ -287,21 +455,35 @@ $("srcRows").addEventListener("input", e => {
   sources[i][el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
 });
 $("srcRows").addEventListener("click", e => { const d = e.target.dataset.del; if (d !== undefined) { sources.splice(+d, 1); renderSources(); calc(); } });
+$("addLand").onclick = () => {
+  const amt = Math.round(n("landCost"));
+  if (!amt) return;
+  const i = sources.findIndex(s => s.land);
+  const row = { name: "Land held by community land trust", type: "Developer fee / land", status: $("landStatus").value, amount: amt,
+    src: "Land cost per home (Ways to shrink the gap)", land: true };
+  if (i >= 0) sources[i] = row; else sources.push(row);
+  renderSources(); calc();
+};
 $("addSrc").onclick = () => { sources.push({ name: "", type: "Donor", status: "unconfirmed", amount: 0, src: "" }); renderSources(); calc(); $("sn" + (sources.length - 1)).focus(); };
 
 // ---------- core math ----------
-function model(rate) {
-  const tierT = TIERS.find(t => t.id === $("tier").value);
+// o: optional overrides {tier, beds, cost, bd} so the map can price any sample project with the same math.
+// A rate buydown lowers the rate the family pays (more price) but costs points up front (added to the gap).
+function model(baseRate, o = {}) {
+  const bd = Math.max(0, o.bd ?? n("bd"));
+  const rate = Math.max(0, baseRate - bd);
+  const tierT = TIERS.find(t => t.id === (o.tier ?? $("tier").value));
   const stateT = LIMIT_TABLES.find(t => t.id === "state-2026-rev");
-  const hh = Math.min(8, Math.max(1, Math.round(n("beds")) + 1));
+  const hh = Math.min(8, Math.max(1, Math.round(o.beds ?? n("beds")) + 1));
   const median = stateT.rows["Median"][hh - 1];
   const cap = tierT.share * tierT.amiMult * median / 12;
   const d = n("down") / 100;
   const perDollar = (1 - d) * (pmtFactor(rate) + n("pmi") / 100 / 12) + n("taxIns") / 100 / 12;
   const fixed = n("hoa") + n("util") + n("maint");
   const price = Math.max(0, (cap - fixed) / perDollar);
-  const cost = n("cost");
-  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, gap: Math.max(0, cost - price) };
+  const cost = o.cost ?? n("cost");
+  const bdCost = price * (1 - d) * n("ppq") * (bd / 0.25) / 100;
+  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, bd, rate, bdCost, gap: Math.max(0, cost + bdCost - price) };
 }
 const currentRate = () => $("rateMode").value === "custom" ? n("customRate") : LATEST[1];
 
@@ -399,7 +581,33 @@ function calc() {
         + `${conf ? ` after ${money(conf)} in confirmed sources` : ""}.`;
   }
 
+  // --- rate buydown ---
+  const m0 = model(rate, { bd: 0 });
+  $("bdCalc").innerHTML = m.bd > 0
+    ? `Rate ${rate.toFixed(2)}% − ${m.bd}% = <b>${m.rate.toFixed(3)}%</b><br>
+       Affordable price: ${money(m0.price)} → <b>${money(m.price)}</b> (+${money(m.price - m0.price)})<br>
+       Buydown cost: ${n("ppq")} point${n("ppq") === 1 ? "" : "s"} × ${(m.bd / 0.25).toFixed(1)} × 1% of the ${money(m.price * (1 - m.d))} loan = <b>${money(m.bdCost)}</b><br>
+       Net change in the gap: <b>${m.gap - m0.gap <= 0 ? "−" : "+"}${money(Math.abs(m.gap - m0.gap))}</b> per home
+       ${m.gap < m0.gap ? "(the buydown pays for itself)" : "(the buydown costs more than it adds)"}`
+    : `Set a buydown above to see how much price it adds and what it costs. At ${rate.toFixed(2)}%, every 0.25% lower adds about ${money(model(rate, { bd: 0.25 }).price - m0.price)} of price before its cost.`;
+
+  // --- co-buyers ---
+  const inc = n("cb1Inc") + n("cb2Inc");
+  const size = Math.min(8, Math.max(1, Math.round(n("cb1Size") + n("cb2Size"))));
+  const budget = inc * n("cbShare") / 100 / 12;
+  const marketPrice = Math.max(0, (budget - m.fixed) / m.perDollar);
+  const lim = t.rows && t.rows[m.tierT.limitRow] ? t.rows[m.tierT.limitRow][size - 1] : null;
+  const co = n("cb2Inc") > 0;
+  $("cbCalc").innerHTML = `
+    Combined income: <b>${money(inc)}</b>/year for <b>${size}</b> ${size === 1 ? "person" : "people"}${co ? " (two households)" : ""}<br>
+    ${lim ? `${esc(m.tierT.name)} limit for ${size} people (${esc(t.name)}): <b>${money(lim)}</b> → ${inc <= lim
+      ? `<span style="color:var(--good)">under the limit</span>` : `<span style="color:var(--bad)">over the limit, may not qualify for this home</span>`}<br>` : ""}
+    Market-rate home: ${n("cbShare")}% × ${money(inc)} ÷ 12 = ${money(budget)}/month buys about <b>${money(marketPrice)}</b>; gap to ${money(m.cost)} is <b>${money(Math.max(0, m.cost - marketPrice))}</b><br>
+    Income-restricted home: price stays capped at <b>${money(Math.min(m.price, m.cost))}</b> by the formula, whatever the buyers earn.
+    ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
+
   drawChart();
+  window.drawMap?.();
   $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
     <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
     <a href="${window.RATES.url}" target="_blank" rel="noopener">Freddie Mac PMMS via FRED</a> · CA Health &amp; Safety Code 50052.5 · Fictional Loan Estimate (doc 04)`;
@@ -475,3 +683,8 @@ $("winSeg").addEventListener("click", e => { const w = e.target.dataset.w; if (!
 $("reset").onclick = () => load(SAMPLE);
 load(SAMPLE);
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="docs.js"></script>
+<script src="projects.js"></script>
+<script src="map.js"></script>
