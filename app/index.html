@@ -247,6 +247,13 @@
   .proglegend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
   .pk { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
   .pk.fit { background: var(--brand); } .pk.check { border: 2px dotted var(--brand); width: 8px; height: 8px; } .pk.no { background: var(--line); }
+  #progDialog { width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+  #progDialog::backdrop { background: rgba(10, 20, 24, .6); }
+  .progdialogbody { padding: 14px 18px 18px; }
+  .progdialogbody .progpanel { border: 0; padding: 0; }
+  .progdialogbody #progSvg { max-height: calc(100vh - 230px); }
+  .progdialogbody #progBig { display: none; }
+  .mapside #progSvg { cursor: zoom-in; }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -319,7 +326,7 @@
         <div class="mapside">
           <div id="mapCard" class="panel"></div>
           <section class="panel progpanel" aria-labelledby="progTitle">
-            <header><h2 id="progTitle" style="font-size:15px">Program atlas for this family</h2><span class="small muted" id="progCount"></span></header>
+            <header><h2 id="progTitle" style="font-size:15px">Program atlas for this family</h2><span class="small muted" id="progCount"></span><button class="linkbtn" id="progBig" aria-label="Enlarge program atlas">Enlarge ⤢</button></header>
             <svg id="progSvg" viewBox="0 0 700 480" role="group" aria-label="Programs and loan types that may fit this household"></svg>
             <div class="proglegend small"><span><i class="pk fit"></i>May fit</span><span><i class="pk check"></i>To check</span><span><i class="pk no"></i>Not for now</span></div>
             <p class="small" id="progWhy" role="status"></p>
@@ -625,6 +632,11 @@
       </section>
 
   </div>
+
+  <dialog id="progDialog" aria-labelledby="progTitle">
+    <div class="viewerbar"><b>Program atlas</b><button id="progClose">Close</button></div>
+    <div id="progDialogBody" class="progdialogbody"></div>
+  </dialog>
 
   <dialog id="docViewer" aria-labelledby="docViewerTitle">
     <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>

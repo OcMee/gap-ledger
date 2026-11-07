@@ -45,7 +45,7 @@
   }
 
   function render() {
-    if (!$("progSvg") || $("mapView").hidden) return;
+    if (!$("progSvg") || ($("mapView").hidden && !$("progDialog").open)) return;
     const hh = household(), list = programs(hh);
     const W = 700, H = 480, cx = 330, cy = 220;
     // Hubs sit around the household; each hub's programs fan out in an arc pointing away from the center.
@@ -96,6 +96,20 @@
   const pick = e => { const g = e.target.closest(".pn"); if (g) { picked = g.dataset.p; render(); } };
   $("progSvg").addEventListener("click", pick);
   $("progSvg").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e); } });
+  // Enlarge: move the whole panel into a dialog (keeps its click handlers), then move it back on close.
+  const panel = $("progSvg").closest(".progpanel"), home = panel.parentNode, dlg = $("progDialog");
+  function enlarge() {
+    if (dlg.open) return;
+    $("progDialogBody").append(panel);
+    dlg.showModal();
+    render();
+  }
+  $("progBig").addEventListener("click", enlarge);
+  // Clicking the atlas (not a program dot) while small opens it large.
+  $("progSvg").addEventListener("click", e => { if (!dlg.open && !e.target.closest(".pn")) enlarge(); });
+  $("progClose").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", () => { home.append(panel); render(); });
   window.renderPrograms = render;
   render();
 })();
