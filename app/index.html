@@ -156,7 +156,7 @@
         <div class="field"><label for="tableId">Income limit table</label><select id="tableId"></select></div>
         <div class="field"><label for="tier">Income tier</label><select id="tier"></select></div>
         <div class="field"><label for="beds">Bedrooms</label><input id="beds" type="number" min="0" max="7" step="1">
-          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit". Verify.</span></div>
+          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit" (studio = 1, 3-bedroom = 4).</span></div>
         <div class="alert" id="tableAlert" hidden></div>
         <h3>From the table</h3>
         <div class="calc" id="limitCalc"></div>
@@ -188,8 +188,8 @@
       <section class="panel">
         <header><h2>How the cap is worked out</h2><span id="tierPill"></span></header>
         <div class="calc" id="capCalc"></div>
-        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). The statute site was not reachable when this was built,
-          so the low, very low and extremely low multipliers are unverified. The moderate formula was checked against a city document quoting the statute.</p>
+        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). Lower, extremely low and moderate income formulas were checked against
+          published copies of the statute, not the official code site. The very low income formula is still unverified.</p>
       </section>
 
       <section class="panel">

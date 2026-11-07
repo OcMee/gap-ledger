@@ -10,6 +10,8 @@ Open `app/index.html` in a browser. No install, no server, no login.
 - `app/rates.js`: Freddie Mac 30-year weekly rate (FRED `MORTGAGE30US`). Refresh with `python3 tools/refresh_rates.py`.
 - `sample-docs/`, `ANSWER_KEY.md`: fictional test documents from the starter kit.
 
-Unverified: the lower, very low and extremely low income multipliers in `limits.js` (CA Health & Safety Code 50052.5) were not checked against the statute text.
+Statute check (CA Health & Safety Code 50052.5): lower, extremely low and moderate income formulas and the bedrooms + 1 household size were matched to published copies of the statute, not the official code site. The very low income formula is still unverified.
+
+Demo script: `DEMO.md`.
 
 All data in this repo is fictional or public. Never commit real household documents. `real-docs/` is git-ignored.

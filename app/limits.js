@@ -50,11 +50,13 @@ window.LIMIT_TABLES = [
 ];
 
 // Affordable housing cost tiers for owner-occupied housing.
-// Source: CA Health & Safety Code 50052.5(b). Multipliers typed from memory and a city document
-// quoting the statute. The statute site was blocked in this session: VERIFY before external use.
+// Source: CA Health & Safety Code 50052.5(b). Checked 2026-11-07 against secondary copies of the
+// statute (servanda.ai, california.public.law search excerpts, LA County 2025 limits document),
+// not the official leginfo site, which was blocked in this session. Very low (30% x 50%) not yet
+// matched to a quoted excerpt. Household size = bedrooms + 1 (studio = 1 ... 4-bedroom = 5).
 window.TIERS = [
-  { id: "eli", name: "Extremely low income", share: 0.30, amiMult: 0.30, limitRow: "Extremely low", verified: false },
+  { id: "eli", name: "Extremely low income", share: 0.30, amiMult: 0.30, limitRow: "Extremely low", verified: true },
   { id: "vli", name: "Very low income",      share: 0.30, amiMult: 0.50, limitRow: "Very low (50%)", verified: false },
-  { id: "li",  name: "Lower income",         share: 0.30, amiMult: 0.70, limitRow: "Low (80%)", verified: false },
+  { id: "li",  name: "Lower income",         share: 0.30, amiMult: 0.70, limitRow: "Low (80%)", verified: true },
   { id: "mod", name: "Moderate income",      share: 0.35, amiMult: 1.10, limitRow: "Moderate (120%)", verified: true },
 ];
