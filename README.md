@@ -17,3 +17,5 @@ Statute check (CA Health & Safety Code 50052.5): lower, extremely low and modera
 Demo script: `DEMO.md`.
 
 All data in this repo is fictional or public. Never commit real household documents. `real-docs/` is git-ignored.
+
+- `app/atlas.js`: county outlines for the atlas map, built by `tools/build_atlas.py` from US Census Bureau boundaries via the `us-atlas` npm package (ISC license). Rebuild: `npm pack us-atlas@3.0.1`, unpack, then `python3 tools/build_atlas.py package/counties-10m.json`.

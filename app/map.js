@@ -1,23 +1,75 @@
-// Map tab: sample projects on a schematic Orange County map, priced with the calculator's own math.
+// Map tab: sample projects on an atlas-style Orange County map, priced with the calculator's own math.
 // The map is drawn here (no map tiles), because the claude.ai viewer blocks images from other sites.
 (() => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const money = x => (x < 0 ? "\u2212$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
-  const H = 640, LNG0 = -118.08, LNG1 = -117.56, LAT0 = 33.40, LAT1 = 33.93;
-  // Equirectangular projection with longitude scaled by cos(latitude) so shapes are not stretched.
-  const k = Math.cos(33.7 * Math.PI / 180);
-  const s = H / (LAT1 - LAT0), W = Math.round((LNG1 - LNG0) * k * s);
+  // Projection and county outlines come from atlas.js (US Census boundaries), so pins and land line up.
+  const A = window.ATLAS;
+  const H = A.H, W = A.W, k = A.k, s = A.s, LNG0 = A.lng0, LAT1 = A.lat1;
   const X = lng => (lng - LNG0) * k * s, Y = lat => (LAT1 - lat) * s;
-  // Approximate coastline from Seal Beach to San Clemente (schematic, not survey grade).
-  const COAST = [[33.80, -118.25], [33.76, -118.13], [33.74, -118.10], [33.70, -118.05], [33.66, -118.01], [33.63, -117.96],
-    [33.61, -117.92], [33.60, -117.88], [33.58, -117.84], [33.54, -117.79], [33.50, -117.75], [33.46, -117.70],
-    [33.43, -117.63], [33.38, -117.57]];
   const TOWNS = [["Fullerton", 33.870, -117.925], ["Anaheim", 33.836, -117.914], ["Orange", 33.788, -117.853],
     ["Garden Grove", 33.774, -117.941], ["Santa Ana", 33.745, -117.868], ["Huntington Beach", 33.660, -117.999],
     ["Costa Mesa", 33.641, -117.919], ["Irvine", 33.684, -117.826], ["Newport Beach", 33.618, -117.929],
     ["Mission Viejo", 33.600, -117.672], ["Laguna Beach", 33.542, -117.783], ["San Clemente", 33.427, -117.612],
     ["Yorba Linda", 33.889, -117.813], ["Tustin", 33.746, -117.826], ["Westminster", 33.759, -117.994]];
+  const MILES_PER_DEG_LAT = 69.05;
+
+  // Static atlas layers, built once: ocean, shoreline water lines, land, borders, grid, labels, compass, scale, inset.
+  function atlasBase() {
+    const C = A.counties, land = [C.la, C.riv, C.sb, C.sd, C.oc].join("");
+    let h = `<rect x="0" y="0" width="${W}" height="${H}" class="ocean"/>`;
+    h += `<path d="${land}" class="wl wl1"/><path d="${land}" class="wl wl2"/><path d="${land}" class="wl wl3"/>`;
+    h += `<path d="${C.la}${C.riv}${C.sb}${C.sd}" class="nb"/><path d="${C.oc}" class="oc"/>`;
+    h += `<path d="${C.la}${C.riv}${C.sb}${C.sd}" class="border"/><path d="${C.oc}" class="ocline"/>`;
+    // Graticule every 0.1 degree, labeled every 0.1 on the frame.
+    const fmt = (v, pos, neg) => { const a = Math.abs(v), d = Math.floor(a + 1e-9), m = Math.round((a - d) * 60); return `${d}\u00b0${String(m).padStart(2, "0")}\u2032${v >= 0 ? pos : neg}`; };
+    for (let lat = Math.ceil(A.lat0 * 10) / 10; lat <= A.lat1; lat = Math.round((lat + 0.1) * 10) / 10) {
+      const y = Y(lat).toFixed(1);
+      h += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" class="grat"/><text x="${W - 6}" y="${y - 3}" text-anchor="end" class="gratl">${fmt(lat, "N", "S")}</text>`;
+    }
+    for (let lng = Math.ceil(A.lng0 * 10) / 10; lng <= A.lng1; lng = Math.round((lng + 0.1) * 10) / 10) {
+      const x = X(lng).toFixed(1);
+      h += `<line x1="${x}" x2="${x}" y1="0" y2="${H}" class="grat"/><text x="${+x + 3}" y="14" class="gratl">${fmt(lng, "E", "W")}</text>`;
+    }
+    // Region labels
+    const lab = (t, lat, lng, cls, rot = 0) => `<text x="${X(lng).toFixed(1)}" y="${Y(lat).toFixed(1)}" class="${cls}" text-anchor="middle"${rot ? ` transform="rotate(${rot} ${X(lng).toFixed(1)} ${Y(lat).toFixed(1)})"` : ""}>${t}</text>`;
+    h += lab("LOS ANGELES COUNTY", 33.95, -118.05, "rlabel") + lab("SAN BERNARDINO CO.", 33.962, -117.66, "rlabel")
+      + lab("RIVERSIDE COUNTY", 33.80, -117.43, "rlabel", -62) + lab("SAN DIEGO CO.", 33.395, -117.43, "rlabel")
+      + lab("ORANGE COUNTY", 33.535, -117.66, "oclabel", -36) + lab("Pacific Ocean", 33.615, -118.085, "sealabel");
+    // Towns without a project pin
+    for (const [nm, la, lo] of TOWNS) {
+      if (PROJECTS.some(p => p.city === nm)) continue;
+      h += `<circle cx="${X(lo).toFixed(1)}" cy="${Y(la).toFixed(1)}" r="2.2" class="town"/><text x="${(X(lo) + 5).toFixed(1)}" y="${(Y(la) + 3.5).toFixed(1)}" class="townl">${esc(nm)}</text>`;
+    }
+    // Compass rose
+    const cx = X(-117.95), cy = Y(33.47);
+    h += `<g class="compass" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})"><circle r="30" class="cring"/><circle r="22" class="cring2"/>
+      <path d="M0 -34 L6 0 L0 34 L-6 0Z" class="cneedle"/><path d="M0 -34 L6 0 L-6 0Z" class="cnorth"/><path d="M-34 0 L0 5 L34 0 L0 -5Z" class="cneedle"/>
+      <text y="-39" text-anchor="middle" class="cN">N</text></g>`;
+    // Scale bar: miles per pixel from the projection (latitude degrees are a fixed length).
+    const pxPerMile = s / MILES_PER_DEG_LAT, sx = X(-118.05), sy = Y(33.385);
+    h += `<g class="scale" transform="translate(${sx.toFixed(1)} ${sy.toFixed(1)})">`;
+    for (let i = 0; i < 2; i++) h += `<rect x="${(i * 5 * pxPerMile).toFixed(1)}" y="0" width="${(5 * pxPerMile).toFixed(1)}" height="6" class="${i ? "sb2" : "sb1"}"/>`;
+    h += `<text x="0" y="-5" class="scalel">0</text><text x="${(5 * pxPerMile).toFixed(1)}" y="-5" text-anchor="middle" class="scalel">5</text>
+      <text x="${(10 * pxPerMile).toFixed(1)}" y="-5" text-anchor="middle" class="scalel">10 miles</text></g>`;
+    // Locator inset: California with Orange County highlighted
+    const I = A.inset, ix = 14, iy = H - I.h - 46;
+    h += `<g transform="translate(${ix} ${iy})" class="inset"><rect x="-6" y="-20" width="${I.w + 12}" height="${I.h + 28}" rx="4" class="insetbox"/>
+      <text x="${I.w / 2}" y="-7" text-anchor="middle" class="insetl">CALIFORNIA</text><path d="${I.ca}" class="insetca"/><path d="${I.oc}" class="insetoc"/></g>`;
+    // Legend cartouche
+    const lx = W - 200, ly = 26;
+    h += `<g transform="translate(${lx} ${ly})" class="legendbox"><rect width="178" height="104" rx="4" class="insetbox"/>
+      <text x="12" y="20" class="insetl">SAMPLE PROJECTS</text>
+      <circle cx="20" cy="38" r="6" class="lg ok"/><text x="32" y="42" class="legl">Fully funded</text>
+      <circle cx="20" cy="56" r="6" class="lg warn"/><text x="32" y="60" class="legl">Under 25% still open</text>
+      <circle cx="20" cy="74" r="6" class="lg bad"/><text x="32" y="78" class="legl">25% or more still open</text>
+      <text x="12" y="96" class="legl muted2">Pin size and number = homes</text></g>`;
+    // Neatline frame
+    h += `<rect x="3" y="3" width="${W - 6}" height="${H - 6}" class="frame"/><rect x="8" y="8" width="${W - 16}" height="${H - 16}" class="frame2"/>`;
+    return h;
+  }
+  const BASE = atlasBase();
   const STAGES = ["Looking for land", "Land secured", "Design", "Permits", "Fundraising", "Under construction"];
   let selected = null;
 
@@ -36,14 +88,7 @@
   function draw() {
     const filt = $("mapFilter").value, beds = $("mapBeds").value;
     const list = PROJECTS.filter(p => (!filt || p.tier === filt) && (!beds || String(p.beds) === beds || (beds === "3" && p.beds >= 3)));
-    const coastPath = COAST.map(([la, lo], i) => `${i ? "L" : "M"}${X(lo).toFixed(1)} ${Y(la).toFixed(1)}`).join("");
-    const ocean = `${coastPath}L${X(-117.2).toFixed(1)} ${H + 400}L-600 ${H + 400}L-600 ${Y(33.80).toFixed(1)}L${X(-118.13).toFixed(1)} ${Y(33.80).toFixed(1)}Z`;
-    let h = `<rect x="-600" y="-400" width="${W + 1200}" height="${H + 800}" class="land"/><path d="${ocean}" class="ocean"/><path d="${coastPath}" class="coast"/>`;
-    h += `<text x="${X(-118.08)}" y="${Y(33.50)}" class="sea">Pacific Ocean</text>`;
-    for (const [nm, la, lo] of TOWNS) {
-      if (PROJECTS.some(p => p.city === nm)) continue;
-      h += `<circle cx="${X(lo)}" cy="${Y(la)}" r="2.5" class="town"/><text x="${X(lo) + 6}" y="${Y(la) + 4}" class="townl">${esc(nm)}</text>`;
-    }
+    let h = BASE;
     for (const p of list) {
       const r = priced(p), cx = X(p.lng), cy = Y(p.lat), rad = 9 + Math.sqrt(p.homes) * 2;
       h += `<g class="pin ${r.level}${selected === p.id ? " sel" : ""}" data-id="${p.id}" tabindex="0" role="button"
