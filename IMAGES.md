@@ -113,3 +113,15 @@ Style for all: photorealistic, warm natural light, Southern California setting, 
 | 34 | Installing kitchen cabinets | https://www.canva.com/M/MAHaRIxEBR4 |
 | 35 | Final inspection with a family | https://www.canva.com/M/MAHaRFotMi8 |
 | 37 | Business volunteers on site | https://www.canva.com/M/MAHaROhM23k |
+| 39 | Donation drop-off at a resale store | https://www.canva.com/M/MAHaRPvm5UA |
+| 40 | Fundraising dinner | https://www.canva.com/M/MAHaRBeZIEk |
+| 41 | Check going into an envelope | https://www.canva.com/M/MAHaRGLn1lA |
+| 42 | Unloading donated lumber | https://www.canva.com/M/MAHaRJk_bL0 |
+| 44 | Parent applying online at night | https://www.canva.com/M/MAHaRMWtMHk |
+| 45 | Homebuyer education class | https://www.canva.com/M/MAHaRKYBBSo |
+| 46 | Family savings jar | https://www.canva.com/M/MAHaRIHcSDI |
+| 48 | Child decorating new bedroom | https://www.canva.com/M/MAHaRBB3W9o |
+| 49 | Row of finished townhomes | https://www.canva.com/M/MAHaRGZGfT8 |
+| 50 | New homes at evening | https://www.canva.com/M/MAHaRDz7MNU |
+
+All 50 shots plus 1 test image are done. All are in the Canva account under Uploads.
