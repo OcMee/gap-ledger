@@ -156,6 +156,13 @@
   .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); display: grid; gap: 4px; max-width: 90ch; }
   .plainbox p { margin: 0; font-size: 15.5px; line-height: 1.55; }
   .links { align-items: center; flex-wrap: wrap; }
+  .steps { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+  .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .step .stepbody { display: grid; gap: 4px; min-width: 0; }
+  .step .stepbody p { margin: 0; }
+  .stepnum { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; font: 600 14px var(--font-num); }
+  .step.done { background: var(--good-soft); } .step.done .stepnum { background: var(--good); }
+  #planPartners tr.now td { background: var(--accent-soft); }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -206,6 +213,7 @@
     <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
     <a href="#documents" id="tabDocs">Documents</a>
     <a href="#options" id="tabOpts">Ways to shrink the gap</a>
+    <a href="#plan" id="tabPlan">Action plan</a>
     <a href="#map" id="tabMap">Map</a>
     <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
   </nav>
@@ -351,6 +359,23 @@
   </section>
 
   </div><!-- /calcView -->
+
+  <div id="planView" hidden>
+    <section class="panel" aria-labelledby="planTitle">
+      <header><h2 id="planTitle">Action plan: how to close this gap</h2>
+        <div class="applyrow" style="margin:0"><button class="primary" id="planCopy">Copy plan</button><button id="planReset">Clear checkmarks</button></div></header>
+      <p class="small" id="planHead"></p>
+      <p class="small muted">Steps follow the order most projects use. Amounts come from this page; program amounts are set by each program, so add them to the funding stack once you have them in writing.
+        Checkmarks are saved in this browser only. Not legal or lending advice.</p>
+      <ol id="planSteps" class="steps"></ol>
+      <p class="small muted" id="planNote" role="status"></p>
+      <textarea id="planText" hidden rows="10" style="width:100%;font:12.5px var(--font-num)" aria-label="Plan as text"></textarea>
+      <h3>Who to work with and where to find them</h3>
+      <div class="tablebox"><table style="min-width:640px">
+        <thead><tr><th>Partner</th><th>What they help with</th><th>Where to find them</th><th>Confidence</th></tr></thead>
+        <tbody id="planPartners"></tbody></table></div>
+    </section>
+  </div>
 
   <div id="docsView" hidden>
   <!-- DOCUMENTS -->
@@ -624,8 +649,9 @@ function calc() {
     ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
 
   drawChart();
-  window.LAST = { m, open, conf, rate };
+  window.LAST = { m, open, conf, rate, homes };
   window.renderPlain?.();
+  window.renderPlan?.();
   window.drawMap?.();
   $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
     <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
@@ -707,4 +733,5 @@ load(SAMPLE);
 <script src="docs.js"></script>
 <script src="projects.js"></script>
 <script src="map.js"></script>
+<script src="plan.js"></script>
 <script src="i18n.js"></script>
