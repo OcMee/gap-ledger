@@ -103,3 +103,13 @@ Style for all: photorealistic, warm natural light, Southern California setting, 
 | 22 | Planning commission public comment (check the seal/emblem before use) | https://www.canva.com/M/MAHaQ-2FAeM |
 | 23 | Inspector checking a foundation | https://www.canva.com/M/MAHaQyzuocE |
 | 24 | Permit card at a site | https://www.canva.com/M/MAHaQxqSXv0 |
+| 25 | Surveyors staking a lot | https://www.canva.com/M/MAHaRPh94vw |
+| 26 | Excavator digging the foundation | https://www.canva.com/M/MAHaRFigb74 |
+| 28 | Framing first floor walls | https://www.canva.com/M/MAHaRPlwc7M |
+| 30 | Installing windows and doors | https://www.canva.com/M/MAHaRCDMFgY |
+| 31 | Electrician and plumber at work | https://www.canva.com/M/MAHaRHQbdEU |
+| 32 | Installing insulation | https://www.canva.com/M/MAHaRKV4EeY |
+| 33 | Drywall finishing and painting | https://www.canva.com/M/MAHaRMbhxVk |
+| 34 | Installing kitchen cabinets | https://www.canva.com/M/MAHaRIxEBR4 |
+| 35 | Final inspection with a family | https://www.canva.com/M/MAHaRFotMi8 |
+| 37 | Business volunteers on site | https://www.canva.com/M/MAHaROhM23k |
