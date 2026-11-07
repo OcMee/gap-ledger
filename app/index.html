@@ -156,6 +156,10 @@
   .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); display: grid; gap: 4px; max-width: 90ch; }
   .plainbox p { margin: 0; font-size: 15.5px; line-height: 1.55; }
   .links { align-items: center; flex-wrap: wrap; }
+  .navbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--accent); border-radius: 6px;
+    color: var(--accent); background: var(--surface); font-weight: 600; font-size: 13.5px; text-decoration: none; }
+  .navbtn:hover { background: var(--accent-soft); }
+  .navbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .steps { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
   .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
   .step .stepbody { display: grid; gap: 4px; min-width: 0; }
@@ -206,7 +210,7 @@
         shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
     </div>
     <div class="links"><label for="langSel" class="small muted">Language</label> <select id="langSel" style="width:auto"></select>
-      <a href="household.html">Household check (Herrera sample)</a></div>
+      <a class="navbtn" href="household.html" title="Opens a separate page that checks one family's documents. Use Back to return.">Household check (Herrera sample) →</a></div>
   </div>
 
   <nav class="tabs" aria-label="Views">
