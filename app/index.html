@@ -230,6 +230,23 @@
   #mapSvg .lg { stroke: var(--surface); stroke-width: 1.5; } #mapSvg .lg.ok { fill: var(--good); } #mapSvg .lg.warn { fill: var(--warn); } #mapSvg .lg.bad { fill: var(--bad); }
   #mapSvg .frame { fill: none; stroke: var(--bord); stroke-width: 1.5; } #mapSvg .frame2 { fill: none; stroke: var(--bord); stroke-width: .6; }
   #mapSvg .pin circle { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+  .mapside { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .progpanel { padding: 12px 14px; }
+  #progSvg { width: 100%; height: auto; display: block; }
+  #progSvg .pl { stroke-width: 1.4; } #progSvg .pl.fit { stroke: var(--brand); } #progSvg .pl.check { stroke: var(--brand); stroke-dasharray: 4 3; stroke-opacity: .7; } #progSvg .pl.no { stroke: var(--line); }
+  #progSvg .phub { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+  #progSvg .phubl { fill: var(--ink); font: 700 15px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+  #progSvg .pn { cursor: pointer; } #progSvg .pn text { font: 600 13.5px var(--font-ui); fill: var(--ink); } #progSvg .pn .hit { fill: transparent; stroke: none; }
+  #progSvg .pn.fit circle { fill: var(--brand); stroke: var(--surface); stroke-width: 2; }
+  #progSvg .pn.check circle { fill: var(--surface); stroke: var(--brand); stroke-width: 2; stroke-dasharray: 2.5 2; }
+  #progSvg .pn.no circle { fill: var(--line); } #progSvg .pn.no text { fill: var(--muted); font-weight: 500; }
+  #progSvg .pn.sel circle { stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: none; }
+  #progSvg .pn:focus { outline: none; } #progSvg .pn:focus circle { stroke: var(--ink); stroke-width: 2.5; }
+  #progSvg .pcenter-halo { fill: var(--brand); fill-opacity: .18; } #progSvg .pcenter { fill: var(--ink); stroke: var(--brand); stroke-width: 3; }
+  #progSvg .pc1 { fill: var(--surface); font: 700 14px var(--font-ui); } #progSvg .pc2 { fill: var(--brand); font: 700 17px var(--font-num); }
+  .proglegend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+  .pk { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .pk.fit { background: var(--brand); } .pk.check { border: 2px dotted var(--brand); width: 8px; height: 8px; } .pk.no { background: var(--line); }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -299,7 +316,17 @@
       <div class="mapgrid">
         <div class="mapbox"><svg id="mapSvg" viewBox="0 0 900 600" role="group" aria-label="Schematic map of Orange County with sample projects"></svg>
           <p class="small muted">Atlas view. County boundaries: US Census Bureau (simplified). City positions are approximate city centers; projects are fictional samples.</p></div>
-        <div id="mapCard" class="panel" style="align-self:start"></div>
+        <div class="mapside">
+          <div id="mapCard" class="panel"></div>
+          <section class="panel progpanel" aria-labelledby="progTitle">
+            <header><h2 id="progTitle" style="font-size:15px">Program atlas for this family</h2><span class="small muted" id="progCount"></span></header>
+            <svg id="progSvg" viewBox="0 0 700 480" role="group" aria-label="Programs and loan types that may fit this household"></svg>
+            <div class="proglegend small"><span><i class="pk fit"></i>May fit</span><span><i class="pk check"></i>To check</span><span><i class="pk no"></i>Not for now</span></div>
+            <p class="small" id="progWhy" role="status"></p>
+            <p class="small muted" id="progFrom"></p>
+            <p class="small muted">A first look, not an eligibility decision. Programs set their own rules, limits and funding rounds.</p>
+          </section>
+        </div>
       </div>
       <h3>All projects</h3>
       <p class="small" id="mapTotals"></p>
@@ -856,6 +883,7 @@ function calc() {
   window.LAST = { m, open, conf, rate, homes };
   window.renderPlain?.();
   window.renderPlan?.();
+  window.renderPrograms?.();
   window.renderInvolved?.();
   window.drawMap?.();
   $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
@@ -939,6 +967,7 @@ load(SAMPLE);
 <script src="projects.js"></script>
 <script src="atlas.js"></script>
 <script src="map.js"></script>
+<script src="programs.js"></script>
 <script src="plan.js"></script>
 <script src="involved.js"></script>
 <script src="i18n.js"></script>

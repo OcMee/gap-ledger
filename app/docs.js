@@ -278,7 +278,7 @@ other documents: amount_due, due_date, action_needed`;
   function household() {
     const stubs = docs.filter(d => ["pay_stub", "income_1099"].includes(d.result?.doc_type));
     const supports = docs.filter(d => d.result?.doc_type === "support_order");
-    if (!stubs.length && !supports.length) return "";
+    if (!stubs.length && !supports.length) { window.DOC_HH = null; return ""; }
     const people = new Map();
     for (const d of stubs) {
       const m = payMonthly(d); if (!m) continue;
@@ -291,6 +291,8 @@ other documents: amount_due, due_date, action_needed`;
     }
     if (!people.size) return `<p class="small muted">Income documents found, but no year-to-date or per-check pay to work from.</p>`;
     const monthly = [...people.values()].reduce((a, p) => a + p.monthly, 0);
+    window.DOC_HH = { annual: monthly * 12, size: Math.min(8, Math.max(1, Math.round(parseFloat($("beds").value) || 0) + 1)),
+      gig: docs.some(d => ["income_1099", "tax_1099_nec"].includes(d.result?.doc_type)) };
     const annual = monthly * 12;
     const hh = Math.min(8, Math.max(1, Math.round(parseFloat($("beds").value) || 0) + 1));
     const t = LIMIT_TABLES.find(x => x.id === $("tableId").value);
@@ -525,7 +527,7 @@ other documents: amount_due, due_date, action_needed`;
     if (view === "plan") window.renderPlan?.();
     if (view === "inv") window.renderInvolved?.();
     if (view === "history") loadHistory();
-    if (view === "map") window.drawMap?.();
+    if (view === "map") { window.drawMap?.(); window.renderPrograms?.(); }
   }
   window.addEventListener("hashchange", route);
   route();
