@@ -411,17 +411,19 @@ other documents: amount_due, due_date, action_needed`;
 
   // ---------- tabs (hash routing: #calculator, #documents, #options, #map, #history) ----------
   function route() {
-    const view = { "#history": "history", "#map": "map", "#documents": "docs", "#options": "opts", "#plan": "plan" }[location.hash] || "calc";
+    const view = { "#history": "history", "#map": "map", "#documents": "docs", "#options": "opts", "#plan": "plan", "#involved": "inv" }[location.hash] || "calc";
     const set = (tab, sec, on) => { $(sec).hidden = !on; if (on) $(tab).setAttribute("aria-current", "page"); else $(tab).removeAttribute("aria-current"); };
     set("tabCalc", "calcView", view === "calc");
     set("tabDocs", "docsView", view === "docs");
     set("tabOpts", "optsView", view === "opts");
     set("tabPlan", "planView", view === "plan");
+    set("tabInv", "involvedView", view === "inv");
     set("tabMap", "mapView", view === "map");
     set("tabHist", "historyView", view === "history");
     // The gap summary stays on top of the three tabs that change it.
     $("sharedTop").hidden = !["calc", "docs", "opts", "plan"].includes(view);
     if (view === "plan") window.renderPlan?.();
+    if (view === "inv") window.renderInvolved?.();
     if (view === "history") loadHistory();
     if (view === "map") window.drawMap?.();
   }

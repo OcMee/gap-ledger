@@ -27,6 +27,7 @@
     --good: #6cc392; --good-soft: #1d3327; --bad: #f08a7e; --bad-soft: #3d2320; --warn: #e3c35a; --warn-soft: #3a3116; color-scheme: dark; }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-ui); margin: 0; }
   .wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 48px;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -171,6 +172,16 @@
   .stepnum { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font: 600 14px var(--font-num); }
   .step.done { background: var(--good-soft); } .step.done .stepnum { background: var(--good); }
   #planPartners tr.now td { background: var(--accent-soft); }
+  .invgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
+  @media (max-width: 1000px) { .invgrid { grid-template-columns: 1fr; } }
+  .invcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; background: var(--surface); }
+  .invcard .field { grid-template-columns: 1fr; }
+  .invimg { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: var(--bg); }
+  .invh { margin: 4px 0 0; text-transform: none; letter-spacing: 0; color: var(--ink); font-size: 18px; }
+  .roles { display: grid; gap: 6px; }
+  .role { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  .role input { width: auto; margin-top: 3px; accent-color: var(--brand); }
+  .role:has(input:checked) { border-color: var(--brand); background: var(--accent-soft); }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -222,6 +233,7 @@
     <a href="#documents" id="tabDocs">Documents</a>
     <a href="#options" id="tabOpts">Ways to shrink the gap</a>
     <a href="#plan" id="tabPlan">Action plan</a>
+    <a href="#involved" id="tabInv">Get involved</a>
     <a href="#map" id="tabMap">Map</a>
     <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
   </nav>
@@ -385,6 +397,49 @@
     </section>
   </div>
 
+  <div id="involvedView" hidden>
+    <section class="panel" aria-labelledby="invTitle">
+      <header><h2 id="invTitle">Get involved: give, donate goods, volunteer</h2><span class="pill info">Every gift is tied to a real gap</span></header>
+      <p class="small muted">This page does not take payments or collect personal details. Money goes through the nonprofit's own donation page, and the volunteer form only builds a message you send yourself.</p>
+      <div class="invgrid">
+        <article class="invcard">
+          <img src="img/gift.png" alt="Illustration: hands placing a check in an envelope" class="invimg">
+          <h3 class="invh">Give money</h3>
+          <div class="field"><label for="giveAmt">Gift amount</label><input id="giveAmt" type="number" min="0" step="100" value="5000"></div>
+          <div class="field"><label for="giveProject">Toward</label><select id="giveProject"></select></div>
+          <p class="donor" id="giveOut" style="font-size:15px"></p>
+          <div class="field"><label for="giveUrl">Nonprofit's donation page (https link)</label><input id="giveUrl" type="url" placeholder="https://..." style="text-align:left">
+            <span class="why">Paste the nonprofit's real donation link before the demo. Saved in this browser only.</span></div>
+          <div class="applyrow"><a id="giveGo" class="navbtn" target="_blank" rel="noopener" hidden>Open donation page →</a></div>
+        </article>
+        <article class="invcard">
+          <img src="img/goods-dropoff.png" alt="Illustration: volunteers sorting donated furniture at a resale store" class="invimg">
+          <h3 class="invh">Donate goods</h3>
+          <p class="small">Donated items are resold, and the money goes toward building homes.</p>
+          <ul class="small" id="goodsList" style="padding-left:18px;margin:0"></ul>
+          <div class="field"><label for="goodsVal">Your estimate of resale value</label><input id="goodsVal" type="number" min="0" step="50">
+            <span class="why">Your own estimate. The store sets the actual price. Ask for a receipt; this is not tax advice.</span></div>
+          <p class="small" id="goodsOut"></p>
+          <div class="applyrow"><button id="goodsAdd">Add to funding stack (not confirmed)</button></div>
+          <p class="small muted" id="goodsNote" role="status"></p>
+        </article>
+        <article class="invcard">
+          <img src="img/volunteer-wall.png" alt="Illustration: volunteers raising a wood wall frame" class="invimg">
+          <h3 class="invh">Volunteer</h3>
+          <p class="small">Pick what you'd like to do. Build days are posted by the nonprofit.</p>
+          <div id="volRoles" class="roles"></div>
+          <div class="field"><label for="volName">Your name</label><input id="volName" type="text" autocomplete="name" style="text-align:left"></div>
+          <div class="field"><label for="volLang">Languages you speak</label><input id="volLang" type="text" placeholder="English, Spanish, Vietnamese" style="text-align:left"></div>
+          <div class="field"><label for="volWhen">When you're free</label><input id="volWhen" type="text" placeholder="Saturdays, weekday evenings" style="text-align:left"></div>
+          <div class="applyrow"><button class="primary" id="volMake">Copy my volunteer message</button></div>
+          <p class="small muted" id="volNote" role="status"></p>
+          <textarea id="volText" hidden rows="9" style="width:100%;font:12.5px var(--font-num)" aria-label="Volunteer message"></textarea>
+        </article>
+      </div>
+      <p class="small muted" style="margin-top:10px">Images are AI-generated illustrations, not real people or events.</p>
+    </section>
+  </div>
+
   <div id="docsView" hidden>
   <!-- DOCUMENTS -->
   <section class="panel" aria-labelledby="docsTitle">
@@ -439,6 +494,16 @@
         <div class="field"><label for="cbShare">Share of income for housing %</label><input id="cbShare" type="number" min="20" max="45" step="1"></div>
         <div class="calc" id="cbCalc"></div>
         <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
+
+        <h3>Shared equity loan (like UK Help to Buy or CalHFA Dream For All)</h3>
+        <p class="small">A program lends part of the price with no monthly payment for a set time. When the family sells or refinances, they repay the same <b>percent of the home's value then</b>, not the original amount.</p>
+        <div class="field"><label for="eqPct">Program share of the price %</label><input id="eqPct" type="number" min="0" max="40" step="1">
+          <span class="why">UK Help to Buy lent up to 20% (40% in London). Dream For All has offered up to 20%, capped. Check current terms.</span></div>
+        <div class="field"><label for="eqYears">Years with no payment</label><input id="eqYears" type="number" min="0" max="30" step="1">
+          <span class="why">Help to Buy charged no interest for 5 years, then fees started, so many owners remortgaged to repay it.</span></div>
+        <div class="calc" id="eqCalc"></div>
+        <div class="applyrow"><button id="addEq">Add the equity loan's effect to the funding stack</button></div>
+        <p class="small muted" style="margin-top:6px">Watch out: at the end of the no-payment period the family may need to remortgage at whatever rate applies then. On a resale-restricted home, value growth is capped, so the repayment and the family's gain are both smaller.</p>
       </section>
 
   </div>
@@ -461,14 +526,14 @@
 <script>
 const SAMPLE = { tableId: "state-2026-rev", tier: "li", beds: 3, cost: 585000, homes: 1,
   down: 3, taxIns: 1.46, pmi: 0.55, hoa: 425, util: 0, maint: 0, rateMode: "latest", customRate: 6.5, gift: 50000,
-  bd: 0, ppq: 1, landCost: 120000, landStatus: "confirmed", cb1Inc: 89219, cb1Size: 4, cb2Inc: 0, cb2Size: 0, cbShare: 30,
+  bd: 0, ppq: 1, landCost: 120000, landStatus: "confirmed", cb1Inc: 89219, cb1Size: 4, cb2Inc: 0, cb2Size: 0, cbShare: 30, eqPct: 20, eqYears: 5,
   sources: [
     { name: "City down-payment loan (example)", type: "City", status: "pending", amount: 0, src: "Enter program terms" },
   ] };
 const TYPES = ["City", "State", "Federal", "Down-payment program", "Lender", "Employer", "Donor", "Earned revenue", "Developer fee / land"];
 const STATUSES = { confirmed: "Confirmed", pending: "Applied / pending", unconfirmed: "Funds not confirmed" };
 const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift",
-  "bd", "ppq", "landCost", "landStatus", "cb1Inc", "cb1Size", "cb2Inc", "cb2Size", "cbShare"];
+  "bd", "ppq", "landCost", "landStatus", "cb1Inc", "cb1Size", "cb2Inc", "cb2Size", "cbShare", "eqPct", "eqYears"];
 const $ = id => document.getElementById(id);
 const money = x => (x < 0 ? "−$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
 const n = id => parseFloat($(id).value) || 0;
@@ -505,6 +570,14 @@ $("srcRows").addEventListener("input", e => {
   sources[i][el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
 });
 $("srcRows").addEventListener("click", e => { const d = e.target.dataset.del; if (d !== undefined) { sources.splice(+d, 1); renderSources(); calc(); } });
+$("addEq").onclick = () => {
+  const e = window.EQ; if (!e || !e.gain) return;
+  const row = { name: `Shared equity loan (${Math.round(e.eq * 100)}% of price)`, type: "Down-payment program", status: "pending", amount: Math.round(e.gain),
+    src: `Program lends ${money(e.amt)}; repaid as ${Math.round(e.eq * 100)}% of value. Ways to shrink the gap tab`, equity: true };
+  const i = sources.findIndex(s => s.equity);
+  if (i >= 0) sources[i] = row; else sources.push(row);
+  renderSources(); calc();
+};
 $("addLand").onclick = () => {
   const amt = Math.round(n("landCost"));
   if (!amt) return;
@@ -641,6 +714,23 @@ function calc() {
        ${m.gap < m0.gap ? "(the buydown pays for itself)" : "(the buydown costs more than it adds)"}`
     : `Set a buydown above to see how much price it adds and what it costs. At ${rate.toFixed(2)}%, every 0.25% lower adds about ${money(model(rate, { bd: 0.25 }).price - m0.price)} of price before its cost.`;
 
+  // --- shared equity loan (Help to Buy style) ---
+  const eq = Math.min(0.6, Math.max(0, n("eqPct") / 100)), yrs = Math.max(0, Math.round(n("eqYears")));
+  const kLoan = pmtFactor(m.rate) + n("pmi") / 100 / 12, kTax = n("taxIns") / 100 / 12;
+  const loanShare = Math.max(0, 1 - m.d - eq);
+  const pEq = Math.max(0, (m.cap - m.fixed) / (loanShare * kLoan + kTax));
+  const pEqCapped = Math.min(pEq, m.cost);
+  const eqAmt = eq * pEqCapped, eqGain = Math.max(0, pEqCapped - Math.min(m.price, m.cost));
+  window.EQ = { eq, gain: eqGain, amt: eqAmt };
+  const growth = g => money(eq * pEqCapped * Math.pow(1 + g, yrs));
+  $("eqCalc").innerHTML = eq > 0 ? `
+    Family pays ${(m.d * 100).toFixed(1)}% down, borrows ${(loanShare * 100).toFixed(1)}%, the program lends ${(eq * 100).toFixed(0)}%<br>
+    Same ${money(m.cap - m.fixed)}/month now buys about <b>${money(pEq)}</b> (was ${money(m.price)})${pEq > m.cost ? `, more than this home costs` : ""}<br>
+    Program loan: ${(eq * 100).toFixed(0)}% \u00d7 ${money(pEqCapped)} = <b>${money(eqAmt)}</b>, no payment for ${yrs} years<br>
+    Gap it closes on this home: <b>${money(eqGain)}</b><br>
+    Repayment after ${yrs} years is ${(eq * 100).toFixed(0)}% of the value then. Examples, not forecasts: value flat ${growth(0)} \u00b7 +3%/yr ${growth(0.03)} \u00b7 +5%/yr ${growth(0.05)}`
+    : "Set a program share above 0% to see the effect.";
+
   // --- co-buyers ---
   const inc = n("cb1Inc") + n("cb2Inc");
   const size = Math.min(8, Math.max(1, Math.round(n("cb1Size") + n("cb2Size"))));
@@ -660,6 +750,7 @@ function calc() {
   window.LAST = { m, open, conf, rate, homes };
   window.renderPlain?.();
   window.renderPlan?.();
+  window.renderInvolved?.();
   window.drawMap?.();
   $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
     <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
@@ -742,4 +833,5 @@ load(SAMPLE);
 <script src="projects.js"></script>
 <script src="map.js"></script>
 <script src="plan.js"></script>
+<script src="involved.js"></script>
 <script src="i18n.js"></script>

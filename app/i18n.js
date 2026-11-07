@@ -10,6 +10,8 @@
     tabOpts: ["Ways to shrink the gap", "Formas de reducir la diferencia", "Cách thu hẹp khoảng chênh lệch"],
     tabPlan: ["Action plan", "Plan de acción", "Kế hoạch hành động"],
     planTitle: ["Action plan: how to close this gap", "Plan de acción: cómo cubrir esta diferencia", "Kế hoạch hành động: cách bù khoản chênh lệch này"],
+    tabInv: ["Get involved", "Participe", "Tham gia"],
+    invTitle: ["Get involved: give, donate goods, volunteer", "Participe: done dinero, done artículos, sea voluntario", "Tham gia: quyên góp tiền, tặng đồ, làm tình nguyện"],
     tabMap: ["Map", "Mapa", "Bản đồ"],
     tabHist: ["History", "Historial", "Lịch sử"],
     h1: ["Does this home pencil, and who closes the gap?", "¿Alcanzan los números para esta casa, y quién cubre la diferencia?",
@@ -51,7 +53,7 @@
   function apply() {
     const i = IDX[lang];
     document.documentElement.lang = lang;
-    ["tabCalc", "tabDocs", "tabOpts", "tabPlan", "tabMap", "tabHist", "docsTitle", "optsTitle", "planTitle", "mapTitle", "histTitle", "docSamples", "addLand"]
+    ["tabCalc", "tabDocs", "tabOpts", "tabPlan", "tabInv", "tabMap", "tabHist", "docsTitle", "optsTitle", "planTitle", "invTitle", "mapTitle", "histTitle", "docSamples", "addLand"]
       .forEach(id => setText($(id), T[id][i]));
     setText(document.querySelector("h1"), T.h1[i]);
     document.querySelectorAll(".strip .k").forEach((el, n) => setText(el, T["k" + (n + 1)][i]));
