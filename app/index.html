@@ -124,6 +124,24 @@
 
   .donor { font-size: 17px; line-height: 1.6; max-width: 62ch; }
   .donor b { font-family: var(--font-num); font-weight: 500; }
+  .drop { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 22px 16px; margin-top: 12px;
+    border: 2px dashed var(--line); border-radius: 10px; cursor: pointer; background: var(--bg); }
+  .drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .applyrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .doclist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; margin-top: 12px; }
+  .doc { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+  .doc > header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .docname { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .docsum { font-size: 14px; }
+  table.facts td { font-size: 13px; padding: 4px 6px; }
+  .quote { color: var(--muted); font-size: 12px; font-style: italic; }
+  .docflags { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .docflags li { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
+  .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
+  button:disabled { opacity: .55; cursor: default; }
   footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
   @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
 </style>
@@ -147,6 +165,27 @@
     <div><div class="k">Still open after confirmed sources</div><div class="v num bad" id="sOpen"></div><div class="f" id="sOpenF"></div></div>
   </section>
   <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
+
+  <!-- DOCUMENTS -->
+  <section class="panel" style="margin-top:16px" aria-labelledby="docsTitle">
+    <header><h2 id="docsTitle">Read documents</h2><span class="pill info">Claude reads, code does the math</span></header>
+    <p class="small muted">Pay stubs, bank statements, Loan Estimates, purchase contracts, development budgets and funding commitment letters.
+      Each value comes with a quote from the document. Nothing changes in the calculator until you click Apply.</p>
+    <div class="alert warn">Use only fictional or properly redacted documents. Files are sent to Claude on your claude.ai account. Blacked-out values show as "Redacted", never guessed.</div>
+    <p class="small" id="docUnavailable" style="margin-top:10px">Document reading works on the claude.ai copy of this page, where Claude can be allowed to read files:
+      <a href="https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE" target="_blank" rel="noopener">open it here</a>.</p>
+    <div id="docControls" hidden>
+      <label class="drop" id="docDrop" for="docInput">
+        <span><b>Drop PDFs or photos here</b>, or click to choose files</span>
+        <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
+        <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
+      </label>
+      <div class="applyrow"><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
+        <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
+    </div>
+    <div id="docList" class="doclist"></div>
+    <div id="docHousehold"></div>
+  </section>
 
   <div class="grid">
     <!-- LEFT: inputs -->
@@ -475,3 +514,6 @@ $("winSeg").addEventListener("click", e => { const w = e.target.dataset.w; if (!
 $("reset").onclick = () => load(SAMPLE);
 load(SAMPLE);
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="docs.js"></script>

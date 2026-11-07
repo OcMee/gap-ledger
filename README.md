@@ -5,6 +5,8 @@ Claude Impact Lab, Orange County. Lane 03: Fund it. Does an affordable ownership
 Open `app/index.html` in a browser. No install, no server, no login.
 
 - `app/index.html`: gap calculator. Statute price cap from dated HCD income limits, rate sensitivity and history, funding stack, donor view.
+- `app/docs.js`: document reading. Claude (on the viewer's claude.ai account) extracts fields with quotes; code does the math; nothing applies until you click Apply. Works on the claude.ai copy of the page only.
+- `tools/gen_project_docs.py`: makes the fictional budget (doc 10) and commitment letter (doc 09).
 - `app/household.html`: household check on the fictional Herrera documents.
 - `app/limits.js`: Orange County 2026 income limits, hand-copied from HCD PDFs. Check against the source.
 - `app/rates.js`: Freddie Mac 30-year weekly rate (FRED `MORTGAGE30US`). Refresh with `python3 tools/refresh_rates.py`.

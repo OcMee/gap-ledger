@@ -138,3 +138,26 @@ The app passes if it gets these 5 without being told:
 3. The $3,000 cash deposit
 4. Pay-later debt as real monthly debt
 5. Supplemental tax not paid by escrow
+
+## 09 Funding commitment letter (project side, fictional)
+
+**Extract**
+- Funder: Westbrook County Housing Trust (fictional). Total $1,200,000 for 12 homes = **$100,000 per home** (computed)
+- Status: **conditional**. Expires 06/30/2027. Funds not reserved until a funding agreement is signed
+
+**Should flag**
+- Conditional money is not confirmed money. The app must not count it as closing the gap.
+- Deadlines: other sources by 03/31/2027, permits by 06/30/2027.
+
+## 10 Development budget (project side, fictional)
+
+**Extract**
+- Laurel Glen Commons, 12 homes. Total development cost $7,020,000 = **$585,000 per home** (computed)
+
+**Should flag**
+- Hard cost bid valid 90 days. Impact fees can change at permit issuance.
+
+## Household match from docs 01b, 02
+
+- YTD-based monthly gross: Luis about $5,006, Maria about $2,429. Household about $89,219/year.
+- For 4 people that is under the **Very low income** limit ($93,050) in the 2026 State table.
