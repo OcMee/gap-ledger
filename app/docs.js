@@ -45,7 +45,7 @@
     }
     addFiles(files);
   });
-  $("docClear").addEventListener("click", () => { docs.forEach(d => d.ctl?.abort()); docs = []; queue.length = 0; render(); });
+  $("docClear").addEventListener("click", () => { [...docs].forEach(d => remove(d.id)); $("docNote").textContent = "Removed all documents."; });
 
   function addFiles(files) {
     for (const file of files) {
@@ -199,7 +199,7 @@ other documents: amount_due, due_date, action_needed`;
 
   function apply(d) {
     for (const [k, v] of applyPlan(d)) {
-      if (k === "source") { sources.push(v); renderSources(); }
+      if (k === "source") { sources.push(v); (d.addedSources ||= []).push(v); renderSources(); }
       else if (k === "rate") { $("rateMode").value = "custom"; $("customRate").value = v; }
       else $(k).value = v;
     }
@@ -243,7 +243,7 @@ other documents: amount_due, due_date, action_needed`;
         : d.status === "failed" ? `<span class="pill bad">Not read</span>`
         : d.status === "reading" ? `<span class="pill info">Reading\u2026</span>` : `<span class="pill info">Waiting</span>`;
       return `<article class="doc" id="doc-${d.id}">
-        <header><div class="docname">${esc(d.name)}</div>${pill}</header>
+        <header><div class="docname">${esc(d.name)}</div><div class="dochead">${pill}<button class="x" data-remove="${d.id}" aria-label="Remove ${esc(d.name)}" title="Remove this document">×</button></div></header>
         ${d.status === "reading" ? `<p class="small muted">Claude is reading this file. This can take up to a minute. <button class="linkbtn" data-stop="${d.id}">Stop</button></p>` : ""}
         ${d.status === "failed" ? `<p class="small">${esc(d.error)}</p>` : ""}
         ${r ? `<p class="docsum">${esc(r.summary)}</p>
@@ -258,9 +258,28 @@ other documents: amount_due, due_date, action_needed`;
     $("docHousehold").innerHTML = household();
   }
   $("docList").addEventListener("click", e => {
-    const a = e.target.dataset.apply, s = e.target.dataset.stop;
+    const a = e.target.dataset.apply, s = e.target.dataset.stop, r = e.target.dataset.remove;
     if (a) apply(docs.find(d => d.id === a));
     if (s) docs.find(d => d.id === s)?.ctl?.abort();
+    if (r) remove(r);
   });
+
+  // Remove one document. A funding source it added is removed too; other values it set stay in place.
+  function remove(id) {
+    const d = docs.find(x => x.id === id); if (!d) return;
+    d.ctl?.abort();
+    const qi = queue.indexOf(d); if (qi >= 0) queue.splice(qi, 1);
+    docs = docs.filter(x => x !== d);
+    let note = `Removed ${d.name}.`;
+    if (d.addedSources?.length) {
+      for (const s of d.addedSources) { const i = sources.indexOf(s); if (i >= 0) sources.splice(i, 1); }
+      renderSources(); calc();
+      note += " Its funding source was removed from the stack.";
+    }
+    if (d.applied && applyPlan(d).some(p => p[0] !== "source"))
+      note += " Values it set in the calculator (such as cost or HOA) stay. Edit them or click Reset sample at the bottom.";
+    $("docNote").textContent = note;
+    render();
+  }
   ["beds", "tableId"].forEach(id => $(id).addEventListener("input", () => { $("docHousehold").innerHTML = household(); }));
 })();

@@ -133,6 +133,8 @@
   .doclist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; margin-top: 12px; }
   .doc { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
   .doc > header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .dochead { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .doc .x:hover { color: var(--bad); }
   .docname { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
   .docsum { font-size: 14px; }
   table.facts td { font-size: 13px; padding: 4px 6px; }
@@ -183,6 +185,7 @@
       <div class="applyrow"><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
         <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
     </div>
+    <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
     <div id="docList" class="doclist"></div>
     <div id="docHousehold"></div>
   </section>
