@@ -17,6 +17,11 @@ Net pay deposits match the stub: $1,480.50 on 10/16 and 10/30.
 Should flag: gig income is variable and before expenses; a lender will likely average it over 2 years. Late fee on 10/14.
 Demo tip: switch the language to Tieng Viet before reading, so summaries come back in Vietnamese.
 
+Two-year history: Minh W-2 2024 $43,680, 2025 $45,240, 2026 pace $47,703 (rising).
+Thao 1099-NEC 2024 $7,950, 2025 $9,880; 2-year average $8,915/yr. 2026 pace $10,146.
+Car loan: $298/month, balance $8,742.18, 31 payments left; matches the 10/05 bank payment.
+Should flag: lenders usually average gig income over 2 years ($8,915/yr) instead of using this year's pace.
+
 ## Rosa Delgado (2 people, set Bedrooms to 1)
 
 Documents: `D1_paystub_rosa.pdf`, `D2_child_support_order_summary.pdf`, `D3_bank_statement_oct2026.pdf`
@@ -29,6 +34,10 @@ Documents: `D1_paystub_rosa.pdf`, `D2_child_support_order_summary.pdf`, `D3_bank
 
 Net pay deposits match the stub: $1,184.40 on 10/03, 10/17 and 10/30.
 Should flag: payday loan ($400 borrowed, $460 repaid, a 15% fee in 2 weeks); one late support payment in July.
+
+Two-year history: Rosa W-2 2024 $35,100, 2025 $36,504, 2026 pace $38,162 (steady, small raises).
+Co-signed home improvement loan for her mother's house: $145/month, balance $6,214.55. Not on Rosa's bank statement (mother pays).
+Should flag: co-signed debt usually counts in Rosa's debt-to-income unless she shows 12 months of the mother paying it.
 
 ## The Okafor sisters (co-buyers, 4 people, keep Bedrooms at 3)
 
@@ -44,3 +53,8 @@ Net pay deposits match the stubs: Adaeze $3,158.40, Chioma $1,932.87.
 Should flag: over the Lower income limit for a restricted home (try Moderate income tier); $10,000 gift needs a gift letter;
 rate not locked; pre-approval is not a commitment.
 Demo tip: on Ways to shrink the gap, enter each sister's yearly income as Household 1 and 2 to show the eligibility warning.
+
+Two-year history: Adaeze W-2 2024 gross $91,520 (box 1 $86,944 after 5% 401k), 2025 gross $95,680 (box 1 $90,896).
+Chioma W-2 2024 $51,600, 2025 $54,000. Both rising into 2026.
+Student loans: Adaeze $310/month (on the bank statement). Chioma $0/month income-driven, balance $28,400.
+Should flag: box 1 is lower than gross because of the 401k, so use box 5 or gross for income. For Chioma's $0 payment, some loan programs count a share of the balance instead, for example 0.5% = $142/month or 1% = $284/month (likely; rules vary by loan type).

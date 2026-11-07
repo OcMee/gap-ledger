@@ -9,15 +9,15 @@
   const SETS = {
     project: { label: "Project documents", beds: 3, files: ["10_development_budget.pdf", "09_funding_commitment_letter.pdf", "04_loan_estimate_sample.pdf"] },
     herrera: { label: "The Herreras (4 people)", beds: 3, files: ["01b_paystub_luis_phone_photo.jpg", "02_paystub_maria.pdf", "03_bank_statement_oct2026.pdf", "04_loan_estimate_sample.pdf"] },
-    nguyen: { label: "The Nguyens (3 people)", beds: 2, files: ["families/nguyen/N1b_paystub_minh_phone_photo.jpg", "families/nguyen/N2_gig_income_1099_summary.pdf", "families/nguyen/N3_bank_statement_oct2026.pdf"] },
-    delgado: { label: "Rosa Delgado (2 people)", beds: 1, files: ["families/delgado/D1_paystub_rosa.pdf", "families/delgado/D2_child_support_order_summary.pdf", "families/delgado/D3_bank_statement_oct2026.pdf"] },
-    okafor: { label: "The Okafor sisters (4 people)", beds: 3, files: ["families/okafor/O1_paystub_adaeze.pdf", "families/okafor/O2_paystub_chioma.pdf", "families/okafor/O3_lender_preapproval_letter.pdf", "families/okafor/O4_bank_statement_oct2026.pdf"] },
+    nguyen: { label: "The Nguyens (3 people)", beds: 2, files: ["families/nguyen/N1b_paystub_minh_phone_photo.jpg", "families/nguyen/N2_gig_income_1099_summary.pdf", "families/nguyen/N3_bank_statement_oct2026.pdf", "families/nguyen/N4_w2_minh_2024.pdf", "families/nguyen/N5_w2_minh_2025.pdf", "families/nguyen/N6_1099nec_thao_2024.pdf", "families/nguyen/N7_1099nec_thao_2025.pdf", "families/nguyen/N8_auto_loan_statement.pdf"] },
+    delgado: { label: "Rosa Delgado (2 people)", beds: 1, files: ["families/delgado/D1_paystub_rosa.pdf", "families/delgado/D2_child_support_order_summary.pdf", "families/delgado/D3_bank_statement_oct2026.pdf", "families/delgado/D4_w2_rosa_2024.pdf", "families/delgado/D5_w2_rosa_2025.pdf", "families/delgado/D6_home_improvement_loan_cosigned.pdf"] },
+    okafor: { label: "The Okafor sisters (4 people)", beds: 3, files: ["families/okafor/O1_paystub_adaeze.pdf", "families/okafor/O2_paystub_chioma.pdf", "families/okafor/O3_lender_preapproval_letter.pdf", "families/okafor/O4_bank_statement_oct2026.pdf", "families/okafor/O5_w2_adaeze_2024.pdf", "families/okafor/O6_w2_adaeze_2025.pdf", "families/okafor/O7_w2_chioma_2024.pdf", "families/okafor/O8_w2_chioma_2025.pdf", "families/okafor/O9_student_loan_adaeze.pdf", "families/okafor/O10_student_loan_chioma.pdf"] },
   };
   const TYPE_NAMES = {
     pay_stub: "Pay stub", bank_statement: "Bank statement", loan_estimate: "Loan Estimate",
     purchase_contract: "Purchase contract", development_budget: "Development budget",
     funding_commitment: "Funding commitment", tax_bill: "Tax bill", insurance_notice: "Insurance notice",
-    hoa_notice: "HOA notice", income_1099: "Gig or 1099 income", support_order: "Child support order", preapproval: "Lender pre-approval", other: "Other document",
+    hoa_notice: "HOA notice", income_1099: "Gig or 1099 income", w2: "W-2", tax_1099_nec: "1099-NEC", loan_statement: "Loan statement", support_order: "Child support order", preapproval: "Lender pre-approval", other: "Other document",
   };
   const PERIODS = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12 };
   let sample = null, imgLimits = null, docs = [], running = 0;
@@ -112,7 +112,7 @@ File name: ${name}
 ${text ? `Text layer of the PDF (reading order may be scrambled; use the page images for layout):\n${text.slice(0, 15000)}\n` : ""}${hasImages ? "Page images of the document are attached." : ""}
 
 Reply with only one JSON object:
-{"doc_type": "pay_stub" | "bank_statement" | "loan_estimate" | "purchase_contract" | "development_budget" | "funding_commitment" | "income_1099" | "support_order" | "preapproval" | "tax_bill" | "insurance_notice" | "hoa_notice" | "other",
+{"doc_type": "pay_stub" | "bank_statement" | "loan_estimate" | "purchase_contract" | "development_budget" | "funding_commitment" | "income_1099" | "w2" | "tax_1099_nec" | "loan_statement" | "support_order" | "preapproval" | "tax_bill" | "insurance_notice" | "hoa_notice" | "other",
  "title": "short name of the document",
  "summary": "1 to 2 plain sentences a family or funder understands, about a 6th grade reading level, written in ${window.LANG_NAME ? window.LANG_NAME() : "English"}",
  "fields": [{"key": "...", "label": "...", "value": number or string or null, "evidence": "exact short quote from the document", "redacted": false}],
@@ -127,6 +127,9 @@ loan_estimate or purchase_contract: sale_price, loan_amount, interest_rate, rate
 development_budget: project_name, homes, total_development_cost, cost_per_home, land_cost, hard_cost, soft_cost
 funding_commitment: funder_name, funder_type (City|State|Federal|Down-payment program|Lender|Employer|Donor|Earned revenue|Developer fee / land), program_name, amount_total, amount_per_home, homes, commitment_status (committed|conditional|pending|unknown), expiration_date, conditions
 income_1099 (gig, contractor or self-employment earnings summary): person_name, payer_name, ytd_gross, ytd_through_date, lowest_month, highest_month
+w2 (one W-2 form for one tax year): person_name, employer, tax_year, box1_wages, box3_social_security_wages, box5_medicare_wages, box12_401k
+tax_1099_nec (one 1099-NEC form for one tax year): person_name, payer_name, tax_year, nonemployee_compensation
+loan_statement (car, student, home improvement, personal or other loan): borrower_names, loan_type (auto|student|home_improvement|personal|other), monthly_payment, current_balance, payments_remaining, cosigned (yes|no), who_pays, payment_status
 support_order (child or spousal support): monthly_amount, start_date, end_or_review_date, late_payments
 preapproval (lender pre-approval or pre-qualification letter): borrowers, max_loan_amount, interest_rate, rate_locked (yes|no), loan_type, expiration_date, conditions
 other documents: amount_due, due_date, action_needed`;
@@ -295,13 +298,39 @@ other documents: amount_due, due_date, action_needed`;
     const fits = rows.filter(([, v]) => annual <= v[hh - 1]).sort((a, b) => a[1][hh - 1] - b[1][hh - 1]);
     const debts = docs.filter(d => d.result?.doc_type === "bank_statement").map(d =>
       ["auto_loan_payment", "credit_card_payment", "pay_later_monthly_total"].reduce((a, k) => a + (num(val(d, k)) || 0), 0));
+    // Two-year history from W-2 and 1099-NEC forms, per person, compared with this year's pace.
+    const yearly = new Map();
+    for (const d of docs.filter(d => ["w2", "tax_1099_nec"].includes(d.result?.doc_type))) {
+      const who = String(val(d, "person_name") || d.name), yr = String(val(d, "tax_year") || "");
+      const amt = num(val(d, d.result.doc_type === "w2" ? "box5_medicare_wages" : "nonemployee_compensation")) ?? num(val(d, "box1_wages"));
+      if (!yr || amt == null) continue;
+      if (!yearly.has(who)) yearly.set(who, {});
+      yearly.get(who)[yr] = amt;
+    }
+    const histLines = [...yearly.entries()].map(([who, ys]) => {
+      const yrs = Object.keys(ys).sort(), first = ys[yrs[0]], last = ys[yrs[yrs.length - 1]];
+      const pace = [...people.values()].find(p => p.who.startsWith(who));
+      const avg = yrs.reduce((a, y) => a + ys[y], 0) / yrs.length;
+      return `${esc(who)}: ${yrs.map(y => `${y} ${money(ys[y])}`).join(" \u2192 ")}${pace ? ` \u2192 2026 pace ${money(pace.monthly * 12)}` : ""}` +
+        ` <span class="muted">(${yrs.length}-year average ${money(avg)}${yrs.length > 1 ? `, ${last >= first ? "up" : "down"} ${Math.abs((last - first) / first * 100).toFixed(1)}%` : ""})</span>`;
+    });
+    // Debts from loan statements. Co-signed loans paid by someone else are listed but flagged.
+    const loans = docs.filter(d => d.result?.doc_type === "loan_statement").map(d => ({
+      type: String(val(d, "loan_type") || "loan").replace("_", " "), pay: num(val(d, "monthly_payment")) ?? 0,
+      bal: num(val(d, "current_balance")), cos: /yes/i.test(String(val(d, "cosigned") || "")), file: d.name }));
+    const loanTotal = loans.reduce((a, l) => a + l.pay, 0);
+    const extra = (histLines.length ? `<h3>Two-year income history</h3><div class="calc">${histLines.join("<br>")}</div>
+      <p class="small muted" style="margin-top:6px">W-2 amounts use Medicare wages (box 5), which include 401(k) contributions. Lenders usually average variable income over 2 years.</p>` : "")
+      + (loans.length ? `<h3>Loans on file</h3><div class="calc">${loans.map(l => `${esc(l.type)}: <b>${money(l.pay)}</b>/month${l.bal != null ? `, balance ${money(l.bal)}` : ""}${l.cos ? ` <b style="color:var(--bad)">co-signed: usually counts as your debt</b>` : ""} <span class="muted">(${esc(l.file)})</span>`).join("<br>")}
+      <br>Total from loan statements: <b>${money(loanTotal)}</b>/month = <b>${monthly ? (loanTotal / monthly * 100).toFixed(1) : "0"}%</b> of household gross income</div>
+      ${loans.some(l => l.pay === 0 && l.bal) ? `<p class="small muted" style="margin-top:6px">A $0 income-driven student loan payment may still be counted by some loan programs as a share of the balance. Ask the lender.</p>` : ""}` : "");
     return `<h3>Household on file</h3>
       <div class="calc">${[...people.values()].map(p => `${esc(p.who)}: <b>${money(p.monthly)}</b>/month = ${esc(p.how)} <span class="muted">(${esc(p.file)})</span>`).join("<br>")}
       <br>Household gross: <b>${money(monthly)}</b>/month = <b>${money(annual)}</b>/year
       ${debts.length ? `<br>Monthly debts on the bank statement (auto, card, pay-later): <b>${money(debts[0])}</b>` : ""}
       <br>${t.rows ? (fits.length ? `Under the <b>${esc(fits[0][0])}</b> limit for ${hh} people (${money(fits[0][1][hh - 1])}) in ${esc(t.name)}`
         : `Above every limit in ${esc(t.name)} for ${hh} people`) : "The selected table has no values."}</div>
-      <p class="small muted" style="margin-top:6px">Household size comes from the Bedrooms field (${hh} people). Program income rules differ: this is a first check, not an eligibility decision.</p>`;
+      <p class="small muted" style="margin-top:6px">Household size comes from the Bedrooms field (${hh} people). Program income rules differ: this is a first check, not an eligibility decision.</p>` + extra;
   }
 
   // ---------- render ----------

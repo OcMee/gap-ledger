@@ -155,6 +155,56 @@ def letter_doc(path, org, sub, lines, color="#4a3b6b"):
     watermark(c); c.save()
 
 
+def w2(path, year, employer, emp_addr, name, address, gross, pretax=0.0):
+    """Simplified W-2 layout (not an IRS form). Box 1 = gross minus pre-tax deductions such as a 401(k)."""
+    box1 = round(gross - pretax, 2)
+    c = canvas.Canvas(str(path), pagesize=letter)
+    header(c, f"Form W-2 Wage and Tax Statement {year}", "Sample layout for the demo. Not an official IRS form. Copy B, to be filed with employee's federal tax return.", color="#3a3a3a")
+    boxes = [
+        ("a  Employee's SSN", "XXX-XX-0000 (masked)"), ("b  Employer ID number (EIN)", "XX-XXXXXXX (fictional)"),
+        ("c  Employer", employer), ("   Employer address", emp_addr), ("e  Employee", name), ("f  Employee address", address),
+        ("1  Wages, tips, other compensation", money(box1)), ("2  Federal income tax withheld", money(gross * .07)),
+        ("3  Social Security wages", money(gross)), ("4  Social Security tax withheld", money(gross * .062)),
+        ("5  Medicare wages and tips", money(gross)), ("6  Medicare tax withheld", money(gross * .0145)),
+        ("12a Code D (401k elective deferral)", money(pretax) if pretax else "-"),
+        ("16 State wages (CA)", money(box1)), ("17 State income tax", money(gross * .021)),
+    ]
+    y = H - 100
+    for i, (k, v) in enumerate(boxes):
+        x = 40 if i % 2 == 0 else 315
+        if i % 2 == 0 and i:
+            y -= 40
+        c.setStrokeColor(colors.HexColor("#999999")); c.rect(x, y - 26, 260, 34, stroke=1, fill=0)
+        c.setFont("Helvetica", 7.5); c.drawString(x + 4, y - 1, k)
+        c.setFont("Helvetica-Bold", 10.5); c.drawString(x + 4, y - 17, v)
+    c.setFont("Helvetica-Oblique", 8.5); c.drawString(40, y - 60, f"Tax year {year}. Wages above are for the full calendar year.")
+    watermark(c); c.save()
+    return box1
+
+
+def nec1099(path, year, payer, name, amount):
+    c = canvas.Canvas(str(path), pagesize=letter)
+    header(c, f"Form 1099-NEC Nonemployee Compensation {year}", "Sample layout for the demo. Not an official IRS form. Copy B, for recipient.", color="#7a3e00")
+    y = pairs(c, 40, H - 100, [("Payer", payer), ("Payer TIN", "XX-XXXXXXX (fictional)"), ("Recipient", name),
+                                ("Recipient TIN", "XXX-XX-0000 (masked)"), ("Tax year", str(year))], lw=130)
+    c.setStrokeColor(colors.HexColor("#999999")); c.rect(40, y - 40, 300, 40, stroke=1, fill=0)
+    c.setFont("Helvetica", 8); c.drawString(44, y - 12, "1  Nonemployee compensation")
+    c.setFont("Helvetica-Bold", 13); c.drawString(44, y - 32, money(amount))
+    c.setFont("Helvetica-Oblique", 9); c.drawString(40, y - 62, "No federal income tax withheld. Recipient may owe self-employment tax.")
+    watermark(c); c.save()
+
+
+def loan_statement(path, lender, sub, rows, notes, color="#2e4a6b"):
+    c = canvas.Canvas(str(path), pagesize=letter)
+    header(c, lender, sub, color=color)
+    c.setFont("Helvetica-Bold", 13); c.drawString(40, H - 100, "LOAN STATEMENT")
+    y = pairs(c, 40, H - 122, rows, lw=190)
+    c.setFont("Helvetica", 9.5)
+    for n in notes:
+        y -= 4; c.drawString(40, y - 10, n); y -= 14
+    watermark(c); c.save()
+
+
 def main():
     key = ["# Families demo pack: answer key", "",
            "All documents are fictional and watermarked. Values below are computed by `tools/gen_family_pack.py` with the same",
@@ -199,6 +249,23 @@ def main():
             "Should flag: gig income is variable and before expenses; a lender will likely average it over 2 years. Late fee on 10/14.",
             "Demo tip: switch the language to Tieng Viet before reading, so summaries come back in Vietnamese.", ""]
 
+    # Two-year history and car loan
+    n24, n25 = 21.00 * 2080, 21.75 * 2080
+    w2(d / "N4_w2_minh_2024.pdf", 2024, "Harbor Pho Kitchen LLC (fictional)", "1210 Bayview Ave, Westminster, CA 92683", "Minh Nguyen", "88 Lotus Way, Apt 3, Westminster, CA 92683", n24)
+    w2(d / "N5_w2_minh_2025.pdf", 2025, "Harbor Pho Kitchen LLC (fictional)", "1210 Bayview Ave, Westminster, CA 92683", "Minh Nguyen", "88 Lotus Way, Apt 3, Westminster, CA 92683", n25)
+    g24, g25 = 7950.00, 9880.00
+    nec1099(d / "N6_1099nec_thao_2024.pdf", 2024, "QuickRoute Delivery (fictional)", "Thao Nguyen", g24)
+    nec1099(d / "N7_1099nec_thao_2025.pdf", 2025, "QuickRoute Delivery (fictional)", "Thao Nguyen", g25)
+    loan_statement(d / "N8_auto_loan_statement.pdf", "Sunline Auto Finance (fictional)", "Statement date 10/20/2026 | Account ending 0000 (placeholder)",
+                   [("Borrower", "Minh Nguyen"), ("Loan type", "Auto loan, 2021 compact SUV"), ("Original amount", money(16800)),
+                    ("Current balance", money(8742.18)), ("Monthly payment", money(298)), ("Interest rate", "6.9% fixed"),
+                    ("Payments remaining", "31"), ("Payment status", "Current, no late payments in 24 months")],
+                   ["Autopay from checking on the 5th of each month."])
+    key += [f"Two-year history: Minh W-2 2024 {money(n24, False)}, 2025 {money(n25, False)}, 2026 pace {money(m1 * 12, False)} (rising).",
+            f"Thao 1099-NEC 2024 {money(g24, False)}, 2025 {money(g25, False)}; 2-year average {money((g24 + g25) / 2, False)}/yr. 2026 pace {money(m2 * 12, False)}.",
+            "Car loan: $298/month, balance $8,742.18, 31 payments left; matches the 10/05 bank payment.",
+            "Should flag: lenders usually average gig income over 2 years ({}/yr) instead of using this year's pace.".format(money((g24 + g25) / 2, False)), ""]
+
     # ---------------- Delgado: 2 people, 1 bedroom, hourly job + child support ----------------
     d = OUT / "delgado"; d.mkdir(parents=True, exist_ok=True)
     rate, hrs = 20.00, 72; gross = rate * hrs; ytd = gross * CHECKS_BIWEEKLY
@@ -233,6 +300,19 @@ def main():
             "- Savings $2,150: far below cash to close on most homes, so deferred down-payment programs matter most.", "",
             f"Net pay deposits match the stub: {money(net_d)} on 10/03, 10/17 and 10/30.",
             "Should flag: payday loan ($400 borrowed, $460 repaid, a 15% fee in 2 weeks); one late support payment in July.", ""]
+
+    # Two-year history and co-signed home improvement loan
+    r24, r25 = 18.75 * 72 * 26, 19.50 * 72 * 26
+    w2(d / "D4_w2_rosa_2024.pdf", 2024, "Valley Family Clinic (fictional)", "455 Orchard Blvd, Santa Ana, CA 92701", "Rosa Delgado", "17 Citrus Ln, Unit B, Santa Ana, CA 92703", r24)
+    w2(d / "D5_w2_rosa_2025.pdf", 2025, "Valley Family Clinic (fictional)", "455 Orchard Blvd, Santa Ana, CA 92701", "Rosa Delgado", "17 Citrus Ln, Unit B, Santa Ana, CA 92703", r25)
+    loan_statement(d / "D6_home_improvement_loan_cosigned.pdf", "Brightway Home Improvement Lending (fictional)", "Statement date 10/15/2026 | Account ending 0000 (placeholder)",
+                   [("Primary borrower", "Elena Delgado (mother)"), ("Co-signer", "Rosa Delgado"), ("Loan type", "Home improvement loan (roof repair)"),
+                    ("Property", "Mother's home, Anaheim, CA (fictional)"), ("Original amount", money(9500)), ("Current balance", money(6214.55)),
+                    ("Monthly payment", money(145)), ("Interest rate", "9.4% fixed"), ("Payments remaining", "50"), ("Payment status", "Current")],
+                   ["Payments are made from the primary borrower's account.", "The co-signer is equally responsible if the primary borrower does not pay."], color="#5a4a2e")
+    key += [f"Two-year history: Rosa W-2 2024 {money(r24, False)}, 2025 {money(r25, False)}, 2026 pace {money(m1 * 12, False)} (steady, small raises).",
+            "Co-signed home improvement loan for her mother's house: $145/month, balance $6,214.55. Not on Rosa's bank statement (mother pays).",
+            "Should flag: co-signed debt usually counts in Rosa's debt-to-income unless she shows 12 months of the mother paying it.", ""]
 
     # ---------------- Okafor sisters: 4 people, co-buyers, just over Lower income ----------------
     d = OUT / "okafor"; d.mkdir(parents=True, exist_ok=True)
@@ -271,6 +351,27 @@ def main():
             "Should flag: over the Lower income limit for a restricted home (try Moderate income tier); $10,000 gift needs a gift letter;",
             "rate not locked; pre-approval is not a commitment.",
             "Demo tip: on Ways to shrink the gap, enter each sister's yearly income as Household 1 and 2 to show the eligibility warning.", ""]
+
+    # Two-year history and student loans
+    a24, a25 = 44.00 * 2080, 46.00 * 2080
+    c24, c25 = 2150.00 * 24, 2250.00 * 24
+    a24b1 = w2(d / "O5_w2_adaeze_2024.pdf", 2024, "Coastline Community Hospital (fictional)", "2200 Shoreline Dr, Huntington Beach, CA 92648", "Adaeze Okafor", "602 Marigold St, Garden Grove, CA 92840", a24, pretax=a24 * .05)
+    a25b1 = w2(d / "O6_w2_adaeze_2025.pdf", 2025, "Coastline Community Hospital (fictional)", "2200 Shoreline Dr, Huntington Beach, CA 92648", "Adaeze Okafor", "602 Marigold St, Garden Grove, CA 92840", a25, pretax=a25 * .05)
+    w2(d / "O7_w2_chioma_2024.pdf", 2024, "Seaview Unified School District (fictional)", "100 District Way, Fountain Valley, CA 92708", "Chioma Okafor", "602 Marigold St, Garden Grove, CA 92840", c24)
+    w2(d / "O8_w2_chioma_2025.pdf", 2025, "Seaview Unified School District (fictional)", "100 District Way, Fountain Valley, CA 92708", "Chioma Okafor", "602 Marigold St, Garden Grove, CA 92840", c25)
+    sl_bal = 28400.00
+    loan_statement(d / "O9_student_loan_adaeze.pdf", "Lantern Student Loan Servicing (fictional)", "Statement date 10/12/2026 | Account ending 0000 (placeholder)",
+                   [("Borrower", "Adaeze Okafor"), ("Loan type", "Student loan, nursing degree"), ("Repayment plan", "Standard 10-year plan"),
+                    ("Current balance", money(21980.40)), ("Monthly payment", money(310)), ("Payments remaining", "74"), ("Payment status", "Current")],
+                   ["Autopay from checking on the 5th of each month."], color="#1e4a6e")
+    loan_statement(d / "O10_student_loan_chioma.pdf", "Lantern Student Loan Servicing (fictional)", "Statement date 10/12/2026 | Account ending 0000 (placeholder)",
+                   [("Borrower", "Chioma Okafor"), ("Loan type", "Student loan, associate degree"), ("Repayment plan", "Income-driven repayment"),
+                    ("Current balance", money(sl_bal)), ("Monthly payment", money(0) + " (income-driven plan)"), ("Next recalculation", "08/2027"), ("Payment status", "Current")],
+                   ["Income-driven payments are recalculated each year and can rise when income rises."], color="#1e4a6e")
+    key += [f"Two-year history: Adaeze W-2 2024 gross {money(a24, False)} (box 1 {money(a24b1, False)} after 5% 401k), 2025 gross {money(a25, False)} (box 1 {money(a25b1, False)}).",
+            f"Chioma W-2 2024 {money(c24, False)}, 2025 {money(c25, False)}. Both rising into 2026.",
+            f"Student loans: Adaeze $310/month (on the bank statement). Chioma $0/month income-driven, balance {money(sl_bal, False)}.",
+            f"Should flag: box 1 is lower than gross because of the 401k, so use box 5 or gross for income. For Chioma's $0 payment, some loan programs count a share of the balance instead, for example 0.5% = {money(sl_bal * .005, False)}/month or 1% = {money(sl_bal * .01, False)}/month (likely; rules vary by loan type).", ""]
 
     (ROOT / "FAMILIES.md").write_text("\n".join(key))
     print("wrote", sorted(str(p.relative_to(ROOT)) for p in OUT.rglob("*.*")))
