@@ -133,6 +133,13 @@
   .doclist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; margin-top: 12px; }
   .doc { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
   .doc > header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  #docViewer { width: min(960px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--surface); color: var(--ink); }
+  #docViewer::backdrop { background: rgba(10, 20, 24, .6); }
+  .viewerbar { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .viewerbody { padding: 14px; display: grid; gap: 14px; justify-items: center; background: var(--bg); }
+  .docpage { width: 100%; max-width: 900px; height: auto; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); background: #fff; }
   .dochead { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .doc .x:hover { color: var(--bad); }
   .docname { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
@@ -189,6 +196,11 @@
     <div id="docList" class="doclist"></div>
     <div id="docHousehold"></div>
   </section>
+
+  <dialog id="docViewer" aria-labelledby="docViewerTitle">
+    <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
+    <div id="docViewerBody" class="viewerbody"></div>
+  </dialog>
 
   <div class="grid">
     <!-- LEFT: inputs -->

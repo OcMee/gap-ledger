@@ -243,7 +243,7 @@ other documents: amount_due, due_date, action_needed`;
         : d.status === "failed" ? `<span class="pill bad">Not read</span>`
         : d.status === "reading" ? `<span class="pill info">Reading\u2026</span>` : `<span class="pill info">Waiting</span>`;
       return `<article class="doc" id="doc-${d.id}">
-        <header><div class="docname">${esc(d.name)}</div><div class="dochead">${pill}<button class="x" data-remove="${d.id}" aria-label="Remove ${esc(d.name)}" title="Remove this document">×</button></div></header>
+        <header><div class="docname">${esc(d.name)}</div><div class="dochead">${pill}<button class="linkbtn" data-view="${d.id}">View</button><button class="x" data-remove="${d.id}" aria-label="Remove ${esc(d.name)}" title="Remove this document">\u00d7</button></div></header>
         ${d.status === "reading" ? `<p class="small muted">Claude is reading this file. This can take up to a minute. <button class="linkbtn" data-stop="${d.id}">Stop</button></p>` : ""}
         ${d.status === "failed" ? `<p class="small">${esc(d.error)}</p>` : ""}
         ${r ? `<p class="docsum">${esc(r.summary)}</p>
@@ -262,7 +262,54 @@ other documents: amount_due, due_date, action_needed`;
     if (a) apply(docs.find(d => d.id === a));
     if (s) docs.find(d => d.id === s)?.ctl?.abort();
     if (r) remove(r);
+    if (e.target.dataset.view) view(docs.find(d => d.id === e.target.dataset.view));
   });
+
+  // Show the original file in a full-screen viewer. PDFs are drawn page by page with pdf.js.
+  let viewUrl = null, viewToken = 0;
+  async function view(d) {
+    if (!d) return;
+    const dlg = $("docViewer"), body = $("docViewerBody"), token = ++viewToken;
+    $("docViewerTitle").textContent = d.name;
+    body.replaceChildren();
+    if (viewUrl) { URL.revokeObjectURL(viewUrl); viewUrl = null; }
+    if (!dlg.open) dlg.showModal();
+    const isPdf = /pdf/i.test(d.file.type) || /\.pdf$/i.test(d.name);
+    if (!isPdf) {
+      viewUrl = URL.createObjectURL(d.file);
+      const img = document.createElement("img");
+      img.src = viewUrl; img.alt = d.name; img.className = "docpage";
+      body.append(img);
+      return;
+    }
+    if (!window.pdfjsLib) { body.textContent = "The PDF reader did not load. Reload the page and try again."; return; }
+    const status = document.createElement("p");
+    status.className = "small muted"; status.textContent = "Loading pages\u2026";
+    body.append(status);
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await d.file.arrayBuffer()) }).promise;
+      const width = Math.min(body.clientWidth || 800, 900);
+      for (let p = 1; p <= pdf.numPages; p++) {
+        if (token !== viewToken || !dlg.open) return;
+        const page = await pdf.getPage(p);
+        const vp0 = page.getViewport({ scale: 1 });
+        const scale = width / vp0.width * Math.min(2, window.devicePixelRatio || 1);
+        const vp = page.getViewport({ scale });
+        const cv = document.createElement("canvas");
+        cv.width = vp.width; cv.height = vp.height; cv.className = "docpage";
+        cv.setAttribute("aria-label", `${d.name}, page ${p} of ${pdf.numPages}`);
+        const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        body.append(cv);
+      }
+      status.textContent = `${pdf.numPages} ${pdf.numPages === 1 ? "page" : "pages"}`;
+    } catch {
+      status.textContent = "This PDF could not be shown.";
+    }
+  }
+  $("docViewerClose").addEventListener("click", () => $("docViewer").close());
+  $("docViewer").addEventListener("click", e => { if (e.target === $("docViewer")) $("docViewer").close(); });
+  $("docViewer").addEventListener("close", () => { viewToken++; if (viewUrl) { URL.revokeObjectURL(viewUrl); viewUrl = null; } });
 
   // Remove one document. A funding source it added is removed too; other values it set stay in place.
   function remove(id) {
