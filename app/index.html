@@ -482,8 +482,8 @@
         <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
         <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
       </label>
-      <div class="applyrow"><button class="primary" id="docLive">Live demo: read the commitment letter</button><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
-        <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
+      <div class="applyrow"><button class="primary" id="docLive">Live demo: read the commitment letter</button><select id="docSet" aria-label="Sample set" style="width:auto"></select><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
+        <span class="small muted">Pick a fictional family or the project documents, then load them. Answer key: FAMILIES.md.</span></div>
     </div>
     <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
     <div id="docList" class="doclist"></div>

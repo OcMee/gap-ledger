@@ -5,15 +5,19 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const money = x => (x < 0 ? "\u2212$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
-  const SAMPLE_FILES = [
-    "10_development_budget.pdf", "09_funding_commitment_letter.pdf", "04_loan_estimate_sample.pdf",
-    "01b_paystub_luis_phone_photo.jpg", "02_paystub_maria.pdf", "03_bank_statement_oct2026.pdf",
-  ];
+  // Sample sets for the demo picker. beds = bedrooms that match the household size (size = bedrooms + 1).
+  const SETS = {
+    project: { label: "Project documents", beds: 3, files: ["10_development_budget.pdf", "09_funding_commitment_letter.pdf", "04_loan_estimate_sample.pdf"] },
+    herrera: { label: "The Herreras (4 people)", beds: 3, files: ["01b_paystub_luis_phone_photo.jpg", "02_paystub_maria.pdf", "03_bank_statement_oct2026.pdf", "04_loan_estimate_sample.pdf"] },
+    nguyen: { label: "The Nguyens (3 people)", beds: 2, files: ["families/nguyen/N1b_paystub_minh_phone_photo.jpg", "families/nguyen/N2_gig_income_1099_summary.pdf", "families/nguyen/N3_bank_statement_oct2026.pdf"] },
+    delgado: { label: "Rosa Delgado (2 people)", beds: 1, files: ["families/delgado/D1_paystub_rosa.pdf", "families/delgado/D2_child_support_order_summary.pdf", "families/delgado/D3_bank_statement_oct2026.pdf"] },
+    okafor: { label: "The Okafor sisters (4 people)", beds: 3, files: ["families/okafor/O1_paystub_adaeze.pdf", "families/okafor/O2_paystub_chioma.pdf", "families/okafor/O3_lender_preapproval_letter.pdf", "families/okafor/O4_bank_statement_oct2026.pdf"] },
+  };
   const TYPE_NAMES = {
     pay_stub: "Pay stub", bank_statement: "Bank statement", loan_estimate: "Loan Estimate",
     purchase_contract: "Purchase contract", development_budget: "Development budget",
     funding_commitment: "Funding commitment", tax_bill: "Tax bill", insurance_notice: "Insurance notice",
-    hoa_notice: "HOA notice", other: "Other document",
+    hoa_notice: "HOA notice", income_1099: "Gig or 1099 income", support_order: "Child support order", preapproval: "Lender pre-approval", other: "Other document",
   };
   const PERIODS = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12 };
   let sample = null, imgLimits = null, docs = [], running = 0;
@@ -33,18 +37,24 @@
   ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => addFiles([...e.dataTransfer.files]));
+  $("docSet").innerHTML = Object.entries(SETS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("");
   $("docSamples").addEventListener("click", async () => {
+    const set = SETS[$("docSet").value];
     $("docSamples").disabled = true;
     const files = [];
-    for (const f of SAMPLE_FILES) {
+    for (const f of set.files) {
       try {
         let r = await fetch("sample-docs/" + f).catch(() => null);
         if (!r || !r.ok) r = await fetch("../sample-docs/" + f);
-        if (r.ok) files.push(new File([await r.blob()], f, { type: f.endsWith(".pdf") ? "application/pdf" : "image/jpeg" }));
+        if (r.ok) files.push(new File([await r.blob()], f.split("/").pop(), { type: f.endsWith(".pdf") ? "application/pdf" : "image/jpeg" }));
       } catch { /* skip missing file */ }
     }
+    // Match the household size to the family, so the income check uses the right limits.
+    if ($("beds").value != set.beds) { $("beds").value = set.beds; calc(); $("docNote").textContent = `Bedrooms set to ${set.beds} (household of ${set.beds + 1}) to match ${set.label}.`; }
+    $("docSamples").disabled = false;
     addFiles(files);
   });
+
   // Live demo: read only the commitment letter, in one click.
   $("docLive").addEventListener("click", async () => {
     const f = "09_funding_commitment_letter.pdf";
@@ -102,7 +112,7 @@ File name: ${name}
 ${text ? `Text layer of the PDF (reading order may be scrambled; use the page images for layout):\n${text.slice(0, 15000)}\n` : ""}${hasImages ? "Page images of the document are attached." : ""}
 
 Reply with only one JSON object:
-{"doc_type": "pay_stub" | "bank_statement" | "loan_estimate" | "purchase_contract" | "development_budget" | "funding_commitment" | "tax_bill" | "insurance_notice" | "hoa_notice" | "other",
+{"doc_type": "pay_stub" | "bank_statement" | "loan_estimate" | "purchase_contract" | "development_budget" | "funding_commitment" | "income_1099" | "support_order" | "preapproval" | "tax_bill" | "insurance_notice" | "hoa_notice" | "other",
  "title": "short name of the document",
  "summary": "1 to 2 plain sentences a family or funder understands, about a 6th grade reading level, written in ${window.LANG_NAME ? window.LANG_NAME() : "English"}",
  "fields": [{"key": "...", "label": "...", "value": number or string or null, "evidence": "exact short quote from the document", "redacted": false}],
@@ -116,6 +126,9 @@ bank_statement: statement_period, checking_balance, savings_balance, rent_paymen
 loan_estimate or purchase_contract: sale_price, loan_amount, interest_rate, rate_type (fixed|adjustable), max_rate, monthly_payment_shown, hoa_monthly, hoa_in_payment (yes|no), cash_to_close, prepayment_penalty, rate_locked (yes|no)
 development_budget: project_name, homes, total_development_cost, cost_per_home, land_cost, hard_cost, soft_cost
 funding_commitment: funder_name, funder_type (City|State|Federal|Down-payment program|Lender|Employer|Donor|Earned revenue|Developer fee / land), program_name, amount_total, amount_per_home, homes, commitment_status (committed|conditional|pending|unknown), expiration_date, conditions
+income_1099 (gig, contractor or self-employment earnings summary): person_name, payer_name, ytd_gross, ytd_through_date, lowest_month, highest_month
+support_order (child or spousal support): monthly_amount, start_date, end_or_review_date, late_payments
+preapproval (lender pre-approval or pre-qualification letter): borrowers, max_loan_amount, interest_rate, rate_locked (yes|no), loan_type, expiration_date, conditions
 other documents: amount_due, due_date, action_needed`;
   }
 
@@ -260,15 +273,20 @@ other documents: amount_due, due_date, action_needed`;
 
   // ---------- household match (pay stubs + bank statements) ----------
   function household() {
-    const stubs = docs.filter(d => d.result?.doc_type === "pay_stub");
-    if (!stubs.length) return "";
+    const stubs = docs.filter(d => ["pay_stub", "income_1099"].includes(d.result?.doc_type));
+    const supports = docs.filter(d => d.result?.doc_type === "support_order");
+    if (!stubs.length && !supports.length) return "";
     const people = new Map();
     for (const d of stubs) {
       const m = payMonthly(d); if (!m) continue;
-      const who = String(val(d, "person_name") || d.name);
-      if (!people.has(who)) people.set(who, { who, ...m, file: d.name }); // first stub per person
+      const who = String(val(d, "person_name") || d.name) + (d.result.doc_type === "income_1099" ? " (gig income)" : "");
+      if (!people.has(who)) people.set(who, { who, ...m, file: d.name }); // first document per person and income type
     }
-    if (!people.size) return `<p class="small muted">Pay stubs found, but no year-to-date or per-check pay to work from.</p>`;
+    for (const d of supports) {
+      const amt = num(val(d, "monthly_amount"));
+      if (amt) people.set("support-" + d.id, { who: "Child support", monthly: amt, how: "monthly amount on the order", file: d.name });
+    }
+    if (!people.size) return `<p class="small muted">Income documents found, but no year-to-date or per-check pay to work from.</p>`;
     const monthly = [...people.values()].reduce((a, p) => a + p.monthly, 0);
     const annual = monthly * 12;
     const hh = Math.min(8, Math.max(1, Math.round(parseFloat($("beds").value) || 0) + 1));
@@ -296,7 +314,7 @@ other documents: amount_due, due_date, action_needed`;
         : d.status === "reading" ? `<span class="pill info">Reading\u2026</span>` : `<span class="pill info">Waiting</span>`;
       return `<article class="doc" id="doc-${d.id}">
         <header><div class="docname">${esc(d.name)}</div><div class="dochead">${pill}<button class="linkbtn" data-view="${d.id}">View</button><button class="x" data-remove="${d.id}" aria-label="Remove ${esc(d.name)}" title="Remove this document">\u00d7</button></div></header>
-        ${d.status === "reading" ? `<p class="small muted">Claude is reading this file… <span class="num" id="tick-${d.id}">${Math.round((Date.now() - d.start) / 1000)}</span> s. <button class="linkbtn" data-stop="${d.id}">Stop</button> <span id="fb-${d.id}"></span></p>` : ""}
+        ${d.status === "reading" ? `<p class="small muted">Claude is reading this file\u2026 <span class="num" id="tick-${d.id}">${Math.round((Date.now() - d.start) / 1000)}</span> s. <button class="linkbtn" data-stop="${d.id}">Stop</button> <span id="fb-${d.id}"></span></p>` : ""}
         ${d.status === "failed" ? `<p class="small">${esc(d.error)}${savedFor(d) ? ` <button class="linkbtn" data-saved="${d.id}">Use saved result</button>` : ""}</p>` : ""}
         ${d.fromSaved ? `<p class="small"><span class="pill warn">Saved from an earlier read</span> ${esc(new Date(d.fromSaved).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</p>` : ""}
         ${r ? commitBanner(d) : ""}
