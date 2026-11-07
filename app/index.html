@@ -195,6 +195,15 @@
   .brandsep { width: 2px; height: 26px; background: var(--brand); border-radius: 2px; }
   .program { font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
   @media (max-width: 480px) { .logo { height: 20px; } .brandsep { height: 20px; } .program { font-size: 13px; } }
+  .optgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px; }
+  @media (max-width: 900px) { .optgrid { grid-template-columns: 1fr; } }
+  .optcard { border: 1px solid var(--line); border-top: 4px solid var(--brand); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; background: var(--surface); }
+  .opthead h3 { margin: 0; font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .optline { margin: 0; font-size: 14.5px; }
+  .optres { margin: 0; padding: 8px 10px; border-radius: 6px; background: var(--accent-soft); font-weight: 600; font-size: 14.5px; }
+  .optres.good { background: var(--good-soft); color: var(--good); } .optres.bad { background: var(--bad-soft); color: var(--bad); }
+  .optcard .field { grid-template-columns: minmax(0, 1fr) 150px; }
+  .optcard .field:has(select) { grid-template-columns: 1fr; }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -508,25 +517,39 @@
   </div>
 
   <div id="optsView" hidden>
-      <section class="panel" aria-labelledby="optsTitle" style="max-width:820px">
+      <section class="panel" aria-labelledby="optsTitle">
         <header><h2 id="optsTitle">Ways to shrink the gap</h2><span class="pill info">Try options</span></header>
 
-        <h3>Rate buydown</h3>
+        <p class="small muted">Four ways to shrink the gap. Each card shows its effect on the home on the Calculator tab. Try one at a time.</p>
+        <div class="optgrid">
+        <article class="optcard" aria-labelledby="opt-bd-t">
+          <header class="opthead"><h3 id="opt-bd-t">Rate buydown</h3></header>
+          <p class="optline">Pay points up front so the family gets a lower rate, which buys more house for the same payment.</p>
+          <p class="optres" id="bdRes" role="status"></p>
+
         <div class="field"><label for="bd">Lower the rate by (%)</label><input id="bd" type="number" min="0" max="3" step="0.125">
           <span class="why">Paid up front by a seller, builder or program. 0 means no buydown.</span></div>
         <div class="field"><label for="ppq">Points per 0.25% lower</label><input id="ppq" type="number" min="0" step="0.25">
           <span class="why">1 point = 1% of the loan. About 1 point per 0.25% is a common rule of thumb; lenders price this differently. Get a real quote.</span></div>
         <div class="calc" id="bdCalc"></div>
+        </article>
+        <article class="optcard" aria-labelledby="opt-land-t">
+          <header class="opthead"><h3 id="opt-land-t">Community land trust</h3></header>
+          <p class="optline">The trust keeps the land, so the family buys only the house.</p>
+          <p class="optres" id="landRes" role="status"></p>
 
-        <h3>Community land trust</h3>
         <div class="field"><label for="landCost">Land cost per home</label><input id="landCost" type="number" step="1000">
           <span class="why">Sample: $1,440,000 land line ÷ 12 homes on the fictional budget (doc 10).</span></div>
         <div class="field"><label for="landStatus">Is the land already secured?</label>
           <select id="landStatus"><option value="confirmed">Yes, the trust owns or has it</option><option value="pending">Applied / pending</option><option value="unconfirmed">Not confirmed</option></select></div>
         <div class="applyrow"><button id="addLand">Add land to the funding stack</button></div>
         <p class="small muted" style="margin-top:6px">The trust keeps the land and the family buys only the house, so the land cost leaves the family's price. The land still has to be paid for, so it shows as a funding line. In return, resale prices are capped so the home stays affordable for the next family.</p>
+        </article>
+        <article class="optcard" aria-labelledby="opt-cb-t">
+          <header class="opthead"><h3 id="opt-cb-t">Co-buyers</h3></header>
+          <p class="optline">Two households buy together, like relatives or friends.</p>
+          <p class="optres" id="cbRes" role="status"></p>
 
-        <h3>Co-buyers</h3>
         <div class="field"><label for="cb1Inc">Household 1 income (yearly)</label><input id="cb1Inc" type="number" step="1000">
           <span class="why">Sample: Herrera pay stubs, year-to-date average (docs 01b and 02).</span></div>
         <div class="field"><label for="cb1Size">Household 1 people</label><input id="cb1Size" type="number" min="1" max="8" step="1"></div>
@@ -536,9 +559,13 @@
         <div class="field"><label for="cbShare">Share of income for housing %</label><input id="cbShare" type="number" min="20" max="45" step="1"></div>
         <div class="calc" id="cbCalc"></div>
         <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
+        </article>
+        <article class="optcard" aria-labelledby="opt-eq-t">
+          <header class="opthead"><h3 id="opt-eq-t">Shared equity loan</h3></header>
+          <p class="optline">A program pays part of the price now and gets the same share of the value back later, like UK Help to Buy.</p>
+          <p class="optres" id="eqRes" role="status"></p>
 
-        <h3>Shared equity loan (like UK Help to Buy or CalHFA Dream For All)</h3>
-        <p class="small">A program lends part of the price with no monthly payment for a set time. When the family sells or refinances, they repay the same <b>percent of the home's value then</b>, not the original amount.</p>
+        <p class="small">No monthly payment for a set time. When the family sells or refinances, they repay the same <b>percent of the home's value then</b>, not the original amount.</p>
         <div class="field"><label for="eqPct">Program share of the price %</label><input id="eqPct" type="number" min="0" max="40" step="1">
           <span class="why">UK Help to Buy lent up to 20% (40% in London). Dream For All has offered up to 20%, capped. Check current terms.</span></div>
         <div class="field"><label for="eqYears">Years with no payment</label><input id="eqYears" type="number" min="0" max="30" step="1">
@@ -546,6 +573,8 @@
         <div class="calc" id="eqCalc"></div>
         <div class="applyrow"><button id="addEq">Add the equity loan's effect to the funding stack</button></div>
         <p class="small muted" style="margin-top:6px">Watch out: at the end of the no-payment period the family may need to remortgage at whatever rate applies then. On a resale-restricted home, value growth is capped, so the repayment and the family's gain are both smaller.</p>
+        </article>
+        </div>
       </section>
 
   </div>
@@ -787,6 +816,21 @@ function calc() {
     Market-rate home: ${n("cbShare")}% × ${money(inc)} ÷ 12 = ${money(budget)}/month buys about <b>${money(marketPrice)}</b>; gap to ${money(m.cost)} is <b>${money(Math.max(0, m.cost - marketPrice))}</b><br>
     Income-restricted home: price stays capped at <b>${money(Math.min(m.price, m.cost))}</b> by the formula, whatever the buyers earn.
     ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
+
+  // --- one-line results at the top of each option card ---
+  const setRes = (id, html, cls = "") => { const el = $(id); if (el) { el.innerHTML = html; el.className = "optres" + (cls ? " " + cls : ""); } };
+  const per25 = m0.gap - model(rate, { bd: 0.25 }).gap;
+  if (m.bd > 0) {
+    const d = m0.gap - m.gap;
+    setRes("bdRes", d >= 0 ? `Closes ${money(d)} of the gap per home, after the buydown's cost` : `Adds ${money(-d)} to the gap: the buydown costs more than it helps`, d >= 0 ? "good" : "bad");
+  } else setRes("bdRes", `Each 0.25% lower closes about ${money(per25)} per home, after its cost`);
+  const landRow = sources.find(x => x.land);
+  setRes("landRes", landRow ? `In the funding stack: ${money(landRow.amount)} per home (${STATUSES[landRow.status].toLowerCase()})`
+    : `Could close up to ${money(n("landCost"))} per home if the trust secures the land`, landRow && landRow.status === "confirmed" ? "good" : "");
+  setRes("cbRes", !co ? "Add a second household below to compare" :
+    lim && inc > lim ? `Over the ${esc(m.tierT.name.toLowerCase())} limit together: may not qualify for this home` :
+    `Still eligible together; a market-rate home budget rises to about ${money(marketPrice)}`, !co ? "" : lim && inc > lim ? "bad" : "good");
+  setRes("eqRes", eq > 0 ? `Closes ${money(eqGain)} of the gap per home; repay ${(eq * 100).toFixed(0)}% of the home's value later` : "Set a program share above 0% to see the effect", eq > 0 ? "good" : "");
 
   drawChart();
   window.LAST = { m, open, conf, rate, homes };
