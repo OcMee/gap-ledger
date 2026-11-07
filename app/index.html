@@ -3,24 +3,28 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   /* Layout: a project ledger. Summary strip on top, then input columns left, results right, then rate history full width. */
   :root {
-    --bg: #f3f5f4; --surface: #ffffff; --ink: #17242b; --muted: #5b6b70; --line: #d5dddb;
-    --accent: #1d5f7a; --accent-soft: #e2eef2;
-    --good: #2f7a4f; --good-soft: #e3f1e8; --bad: #b3362b; --bad-soft: #f8e4e1; --warn: #9a6400; --warn-soft: #fbf0d9;
-    --font-ui: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* OCMEE brand: orange accent, warm paper, soft charcoal ink (softer than the brand #1A1A1A), Montserrat + IBM Plex Mono. */
+    --bg: #faf8f4; --surface: #fffdf9; --ink: #2b2925; --muted: #66635c; --line: #e7e2d7;
+    --accent: #9e5404; --accent-soft: #fdeedd; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #2f6d8c; --fund-soft: #e3eef4;
+    --good: #2f7a4f; --good-soft: #e5f1e8; --bad: #b3362b; --bad-soft: #f8e4e1; --warn: #8a6a00; --warn-soft: #f7efd2;
+    --font-ui: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #11181b; --surface: #182226; --ink: #e6edee; --muted: #93a3a7; --line: #2b383d;
-    --accent: #6fb3cf; --accent-soft: #1d3540; --good: #6cc392; --good-soft: #183327; --bad: #f08a7e; --bad-soft: #3a1f1c;
-    --warn: #e7b85a; --warn-soft: #362a12; color-scheme: dark; } }
+    --bg: #1c1e22; --surface: #24272d; --ink: #efece6; --muted: #a9a69e; --line: #3a3e46;
+    --accent: #ffb15e; --accent-soft: #3a2b18; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #7fb6d6; --fund-soft: #1f3340;
+    --good: #6cc392; --good-soft: #1d3327; --bad: #f08a7e; --bad-soft: #3d2320; --warn: #e3c35a; --warn-soft: #3a3116; color-scheme: dark;} }
   :root[data-theme="dark"] {
-    --bg: #11181b; --surface: #182226; --ink: #e6edee; --muted: #93a3a7; --line: #2b383d;
-    --accent: #6fb3cf; --accent-soft: #1d3540; --good: #6cc392; --good-soft: #183327; --bad: #f08a7e; --bad-soft: #3a1f1c;
-    --warn: #e7b85a; --warn-soft: #362a12; color-scheme: dark; }
+    --bg: #1c1e22; --surface: #24272d; --ink: #efece6; --muted: #a9a69e; --line: #3a3e46;
+    --accent: #ffb15e; --accent-soft: #3a2b18; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #7fb6d6; --fund-soft: #1f3340;
+    --good: #6cc392; --good-soft: #1d3327; --bad: #f08a7e; --bad-soft: #3d2320; --warn: #e3c35a; --warn-soft: #3a3116; color-scheme: dark; }
 
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-ui); margin: 0; }
@@ -53,9 +57,9 @@
   .barbox { margin: 14px 0 4px; }
   .bar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; background: var(--bad-soft); }
   .bar > div { min-width: 0; display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 600;
-    color: #fff; white-space: nowrap; overflow: hidden; transition: flex-basis .35s ease; }
-  .seg-fam { background: var(--good); } .seg-ok { background: var(--accent); }
-  .seg-pend { background: repeating-linear-gradient(135deg, var(--accent) 0 6px, transparent 6px 10px); color: var(--ink) !important; }
+    color: var(--surface); white-space: nowrap; overflow: hidden; transition: flex-basis .35s ease; }
+  .seg-fam { background: var(--good); } .seg-ok { background: var(--fund); }
+  .seg-pend { background: repeating-linear-gradient(135deg, var(--fund) 0 6px, transparent 6px 10px); color: var(--ink) !important; }
   .seg-gap { background: var(--bad); }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
@@ -77,7 +81,7 @@
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button { font: inherit; font-size: 14px; cursor: pointer; border-radius: 6px; padding: 7px 12px; border: 1px solid var(--line);
     background: var(--surface); color: var(--ink); }
-  button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .seg button { border: 0; border-radius: 0; padding: 5px 10px; font-size: 13px; background: var(--surface); }
   .seg button[aria-pressed=true] { background: var(--ink); color: var(--surface); }
@@ -112,9 +116,9 @@
   .chart { width: 100%; height: auto; display: block; }
   .chart text { fill: var(--muted); font-family: var(--font-num); font-size: 11px; }
   .chart .grid line { stroke: var(--line); }
-  .chart .rate { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .chart .rate { fill: none; stroke: var(--fund); stroke-width: 1.8; }
   .chart .gapl { fill: none; stroke: var(--bad); stroke-width: 1.8; }
-  .chart .area { fill: var(--accent-soft); }
+  .chart .area { fill: var(--fund-soft); }
   .chart .areab { fill: var(--bad-soft); }
   .chart .hair { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
   .chart .dot { fill: var(--surface); stroke-width: 2; }
@@ -153,7 +157,7 @@
   .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
   .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
   button:disabled { opacity: .55; cursor: default; }
-  .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); display: grid; gap: 4px; max-width: 90ch; }
+  .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); border-left: 4px solid var(--brand); display: grid; gap: 4px; max-width: 90ch; }
   .plainbox p { margin: 0; font-size: 15.5px; line-height: 1.55; }
   .links { align-items: center; flex-wrap: wrap; }
   .navbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--accent); border-radius: 6px;
@@ -164,13 +168,13 @@
   .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
   .step .stepbody { display: grid; gap: 4px; min-width: 0; }
   .step .stepbody p { margin: 0; }
-  .stepnum { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; font: 600 14px var(--font-num); }
+  .stepnum { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font: 600 14px var(--font-num); }
   .step.done { background: var(--good-soft); } .step.done .stepnum { background: var(--good); }
   #planPartners tr.now td { background: var(--accent-soft); }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom: 3px solid var(--brand); }
   .tabs a:hover { color: var(--ink); }
   .tabs .count { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
   .mapgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; margin-top: 12px; }
@@ -178,9 +182,9 @@
   .mapbox { min-width: 0; }
   #mapSvg { width: 100%; max-height: 640px; height: auto; display: block; border: 1px solid var(--line); border-radius: 10px; }
   #mapSvg .land { fill: var(--surface); }
-  #mapSvg .ocean { fill: var(--accent-soft); }
-  #mapSvg .coast { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-  #mapSvg .sea { fill: var(--accent); font: italic 14px var(--font-ui); }
+  #mapSvg .ocean { fill: var(--fund-soft); }
+  #mapSvg .coast { fill: none; stroke: var(--fund); stroke-width: 1.5; }
+  #mapSvg .sea { fill: var(--fund); font: italic 14px var(--font-ui); }
   #mapSvg .town { fill: var(--muted); }
   #mapSvg .townl { fill: var(--muted); font: 12px var(--font-ui); }
   #mapSvg .pin { cursor: pointer; }
@@ -189,7 +193,7 @@
   #mapSvg .pin.sel circle { stroke: var(--ink); stroke-width: 3; }
   #mapSvg .pin:focus { outline: none; } #mapSvg .pin:focus circle { stroke: var(--ink); stroke-width: 3; }
   #mapSvg .pinlabel, #mapSvg .pinn { pointer-events: none; }
-  #mapSvg .pinn { fill: #fff; font: 600 12px var(--font-num); }
+  #mapSvg .pinn { fill: var(--surface); font: 600 12px var(--font-num); }
   #mapSvg .pinl { fill: var(--ink); font: 600 13px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
   #mapSvg .pins { fill: var(--muted); font: 11.5px var(--font-num); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
   .flexrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -590,7 +594,7 @@ function calc() {
     ["seg-gap", "Open gap", openIfAll],
   ].filter(s => s[2] > 0.5);
   $("bar").innerHTML = segs.map(([c, l, v]) => `<div class="${c}" style="flex-basis:${(v / whole * 100).toFixed(2)}%" title="${l}: ${money(v)}">${v / whole > .14 ? l + " " + money(v) : ""}</div>`).join("");
-  const sw = { "seg-fam": "var(--good)", "seg-ok": "var(--accent)", "seg-pend": "repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 5px)", "seg-gap": "var(--bad)" };
+  const sw = { "seg-fam": "var(--good)", "seg-ok": "var(--fund)", "seg-pend": "repeating-linear-gradient(135deg, var(--fund) 0 3px, transparent 3px 5px)", "seg-gap": "var(--bad)" };
   $("legend").innerHTML = segs.map(([c, l, v]) => `<span><i style="background:${sw[c]}"></i>${l}: <span class="num">${money(v)}</span></span>`).join("");
 
   // --- rate status ---
@@ -687,15 +691,15 @@ function drawChart() {
   h += `</g>`;
   for (let v = rMin; v <= rMax; v += rStep) h += `<text x="${L - 8}" y="${y1(v) + 4}" text-anchor="end">${v}%</text>`;
   for (let v = g0; v <= g1 + 1; v += gStep) h += `<text x="${L - 8}" y="${y2(v) + 4}" text-anchor="end">${v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "k"}</text>`;
-  h += `<text x="${L}" y="${T1 - 4}" style="fill:var(--accent)">30-yr rate</text><text x="${L}" y="${T2 - 6}" style="fill:var(--bad)">Gap per home at that rate</text>`;
+  h += `<text x="${L}" y="${T1 - 4}" style="fill:var(--fund)">30-yr rate</text><text x="${L}" y="${T2 - 6}" style="fill:var(--bad)">Gap per home at that rate</text>`;
   // year ticks
   const y0 = new Date(t0).getFullYear(), yN = new Date(t1).getFullYear(), yStep = Math.max(1, Math.ceil((yN - y0) / 8));
   for (let yr = y0 + 1; yr <= yN; yr += yStep) { const xx = x(yr + "-01-01"); h += `<line x1="${xx}" x2="${xx}" y1="${B2}" y2="${B2 + 4}" style="stroke:var(--muted)"/><text x="${xx}" y="${B2 + 18}" text-anchor="middle">${yr}</text>`; }
   h += `<path class="area" d="${path(r1)}L${R} ${B1}L${L} ${B1}Z"/><path class="rate" d="${path(r1)}"/>`;
   h += `<path class="areab" d="${path(r2)}L${R} ${B2}L${L} ${B2}Z"/><path class="gapl" d="${path(r2)}"/>`;
   const lx = x(pts[pts.length - 1][0]);
-  h += `<circle class="dot" cx="${lx}" cy="${r1[r1.length - 1]}" r="4" style="stroke:var(--accent)"/><circle class="dot" cx="${lx}" cy="${r2[r2.length - 1]}" r="4" style="stroke:var(--bad)"/>`;
-  h += `<g id="hover" visibility="hidden"><line class="hair" id="hl" y1="${T1}" y2="${B2}"/><circle class="dot" id="hd1" r="4" style="stroke:var(--accent)"/><circle class="dot" id="hd2" r="4" style="stroke:var(--bad)"/></g>`;
+  h += `<circle class="dot" cx="${lx}" cy="${r1[r1.length - 1]}" r="4" style="stroke:var(--fund)"/><circle class="dot" cx="${lx}" cy="${r2[r2.length - 1]}" r="4" style="stroke:var(--bad)"/>`;
+  h += `<g id="hover" visibility="hidden"><line class="hair" id="hl" y1="${T1}" y2="${B2}"/><circle class="dot" id="hd1" r="4" style="stroke:var(--fund)"/><circle class="dot" id="hd2" r="4" style="stroke:var(--bad)"/></g>`;
   h += `<rect x="${L}" y="${T1}" width="${R - L}" height="${B2 - T1}" fill="transparent" id="hit"/>`;
   svg.innerHTML = h;
 
