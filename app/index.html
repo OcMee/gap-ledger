@@ -341,6 +341,36 @@
         <p class="small muted" style="margin-top:8px">Only <b>confirmed</b> money counts as closing the gap. Pending and unconfirmed lines show as hatched. This page has no built-in program amounts, because program terms and funding change.</p>
       </section>
 
+      <section class="panel" aria-labelledby="optsTitle">
+        <header><h2 id="optsTitle">Ways to shrink the gap</h2><span class="pill info">Try options</span></header>
+
+        <h3>Rate buydown</h3>
+        <div class="field"><label for="bd">Lower the rate by (%)</label><input id="bd" type="number" min="0" max="3" step="0.125">
+          <span class="why">Paid up front by a seller, builder or program. 0 means no buydown.</span></div>
+        <div class="field"><label for="ppq">Points per 0.25% lower</label><input id="ppq" type="number" min="0" step="0.25">
+          <span class="why">1 point = 1% of the loan. About 1 point per 0.25% is a common rule of thumb; lenders price this differently. Get a real quote.</span></div>
+        <div class="calc" id="bdCalc"></div>
+
+        <h3>Community land trust</h3>
+        <div class="field"><label for="landCost">Land cost per home</label><input id="landCost" type="number" step="1000">
+          <span class="why">Sample: $1,440,000 land line ÷ 12 homes on the fictional budget (doc 10).</span></div>
+        <div class="field"><label for="landStatus">Is the land already secured?</label>
+          <select id="landStatus"><option value="confirmed">Yes, the trust owns or has it</option><option value="pending">Applied / pending</option><option value="unconfirmed">Not confirmed</option></select></div>
+        <div class="applyrow"><button id="addLand">Add land to the funding stack</button></div>
+        <p class="small muted" style="margin-top:6px">The trust keeps the land and the family buys only the house, so the land cost leaves the family's price. The land still has to be paid for, so it shows as a funding line. In return, resale prices are capped so the home stays affordable for the next family.</p>
+
+        <h3>Co-buyers</h3>
+        <div class="field"><label for="cb1Inc">Household 1 income (yearly)</label><input id="cb1Inc" type="number" step="1000">
+          <span class="why">Sample: Herrera pay stubs, year-to-date average (docs 01b and 02).</span></div>
+        <div class="field"><label for="cb1Size">Household 1 people</label><input id="cb1Size" type="number" min="1" max="8" step="1"></div>
+        <div class="field"><label for="cb2Inc">Household 2 income (yearly)</label><input id="cb2Inc" type="number" step="1000">
+          <span class="why">A relative or friend buying together. 0 means no co-buyer.</span></div>
+        <div class="field"><label for="cb2Size">Household 2 people</label><input id="cb2Size" type="number" min="0" max="8" step="1"></div>
+        <div class="field"><label for="cbShare">Share of income for housing %</label><input id="cbShare" type="number" min="20" max="45" step="1"></div>
+        <div class="calc" id="cbCalc"></div>
+        <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
+      </section>
+
       <section class="panel">
         <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
         <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
@@ -381,12 +411,14 @@
 <script>
 const SAMPLE = { tableId: "state-2026-rev", tier: "li", beds: 3, cost: 585000, homes: 1,
   down: 3, taxIns: 1.46, pmi: 0.55, hoa: 425, util: 0, maint: 0, rateMode: "latest", customRate: 6.5, gift: 50000,
+  bd: 0, ppq: 1, landCost: 120000, landStatus: "confirmed", cb1Inc: 89219, cb1Size: 4, cb2Inc: 0, cb2Size: 0, cbShare: 30,
   sources: [
     { name: "City down-payment loan (example)", type: "City", status: "pending", amount: 0, src: "Enter program terms" },
   ] };
 const TYPES = ["City", "State", "Federal", "Down-payment program", "Lender", "Employer", "Donor", "Earned revenue", "Developer fee / land"];
 const STATUSES = { confirmed: "Confirmed", pending: "Applied / pending", unconfirmed: "Funds not confirmed" };
-const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift"];
+const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift",
+  "bd", "ppq", "landCost", "landStatus", "cb1Inc", "cb1Size", "cb2Inc", "cb2Size", "cbShare"];
 const $ = id => document.getElementById(id);
 const money = x => (x < 0 ? "−$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
 const n = id => parseFloat($(id).value) || 0;
@@ -423,11 +455,23 @@ $("srcRows").addEventListener("input", e => {
   sources[i][el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
 });
 $("srcRows").addEventListener("click", e => { const d = e.target.dataset.del; if (d !== undefined) { sources.splice(+d, 1); renderSources(); calc(); } });
+$("addLand").onclick = () => {
+  const amt = Math.round(n("landCost"));
+  if (!amt) return;
+  const i = sources.findIndex(s => s.land);
+  const row = { name: "Land held by community land trust", type: "Developer fee / land", status: $("landStatus").value, amount: amt,
+    src: "Land cost per home (Ways to shrink the gap)", land: true };
+  if (i >= 0) sources[i] = row; else sources.push(row);
+  renderSources(); calc();
+};
 $("addSrc").onclick = () => { sources.push({ name: "", type: "Donor", status: "unconfirmed", amount: 0, src: "" }); renderSources(); calc(); $("sn" + (sources.length - 1)).focus(); };
 
 // ---------- core math ----------
-// o: optional overrides {tier, beds, cost} so the map can price any sample project with the same math.
-function model(rate, o = {}) {
+// o: optional overrides {tier, beds, cost, bd} so the map can price any sample project with the same math.
+// A rate buydown lowers the rate the family pays (more price) but costs points up front (added to the gap).
+function model(baseRate, o = {}) {
+  const bd = Math.max(0, o.bd ?? n("bd"));
+  const rate = Math.max(0, baseRate - bd);
   const tierT = TIERS.find(t => t.id === (o.tier ?? $("tier").value));
   const stateT = LIMIT_TABLES.find(t => t.id === "state-2026-rev");
   const hh = Math.min(8, Math.max(1, Math.round(o.beds ?? n("beds")) + 1));
@@ -438,7 +482,8 @@ function model(rate, o = {}) {
   const fixed = n("hoa") + n("util") + n("maint");
   const price = Math.max(0, (cap - fixed) / perDollar);
   const cost = o.cost ?? n("cost");
-  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, gap: Math.max(0, cost - price) };
+  const bdCost = price * (1 - d) * n("ppq") * (bd / 0.25) / 100;
+  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, bd, rate, bdCost, gap: Math.max(0, cost + bdCost - price) };
 }
 const currentRate = () => $("rateMode").value === "custom" ? n("customRate") : LATEST[1];
 
@@ -535,6 +580,31 @@ function calc() {
         + `It covers ${money(gift)} of the ${money(target)} between what the home costs to build (${money(m.cost)}) and what the family can pay (${money(Math.min(m.price, m.cost))})`
         + `${conf ? ` after ${money(conf)} in confirmed sources` : ""}.`;
   }
+
+  // --- rate buydown ---
+  const m0 = model(rate, { bd: 0 });
+  $("bdCalc").innerHTML = m.bd > 0
+    ? `Rate ${rate.toFixed(2)}% − ${m.bd}% = <b>${m.rate.toFixed(3)}%</b><br>
+       Affordable price: ${money(m0.price)} → <b>${money(m.price)}</b> (+${money(m.price - m0.price)})<br>
+       Buydown cost: ${n("ppq")} point${n("ppq") === 1 ? "" : "s"} × ${(m.bd / 0.25).toFixed(1)} × 1% of the ${money(m.price * (1 - m.d))} loan = <b>${money(m.bdCost)}</b><br>
+       Net change in the gap: <b>${m.gap - m0.gap <= 0 ? "−" : "+"}${money(Math.abs(m.gap - m0.gap))}</b> per home
+       ${m.gap < m0.gap ? "(the buydown pays for itself)" : "(the buydown costs more than it adds)"}`
+    : `Set a buydown above to see how much price it adds and what it costs. At ${rate.toFixed(2)}%, every 0.25% lower adds about ${money(model(rate, { bd: 0.25 }).price - m0.price)} of price before its cost.`;
+
+  // --- co-buyers ---
+  const inc = n("cb1Inc") + n("cb2Inc");
+  const size = Math.min(8, Math.max(1, Math.round(n("cb1Size") + n("cb2Size"))));
+  const budget = inc * n("cbShare") / 100 / 12;
+  const marketPrice = Math.max(0, (budget - m.fixed) / m.perDollar);
+  const lim = t.rows && t.rows[m.tierT.limitRow] ? t.rows[m.tierT.limitRow][size - 1] : null;
+  const co = n("cb2Inc") > 0;
+  $("cbCalc").innerHTML = `
+    Combined income: <b>${money(inc)}</b>/year for <b>${size}</b> ${size === 1 ? "person" : "people"}${co ? " (two households)" : ""}<br>
+    ${lim ? `${esc(m.tierT.name)} limit for ${size} people (${esc(t.name)}): <b>${money(lim)}</b> → ${inc <= lim
+      ? `<span style="color:var(--good)">under the limit</span>` : `<span style="color:var(--bad)">over the limit, may not qualify for this home</span>`}<br>` : ""}
+    Market-rate home: ${n("cbShare")}% × ${money(inc)} ÷ 12 = ${money(budget)}/month buys about <b>${money(marketPrice)}</b>; gap to ${money(m.cost)} is <b>${money(Math.max(0, m.cost - marketPrice))}</b><br>
+    Income-restricted home: price stays capped at <b>${money(Math.min(m.price, m.cost))}</b> by the formula, whatever the buyers earn.
+    ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
 
   drawChart();
   window.drawMap?.();

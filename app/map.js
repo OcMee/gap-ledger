@@ -24,7 +24,7 @@
   const TIER_NAME = id => (TIERS.find(t => t.id === id) || {}).name || id;
   function priced(p) {
     const rate = currentRate();
-    const m = model(rate, { tier: p.tier, beds: p.beds, cost: p.cost });
+    const m = model(rate, { tier: p.tier, beds: p.beds, cost: p.cost, bd: 0 });
     const sum = st => p.sources.filter(x => st.includes(x.status)).reduce((a, x) => a + x.amount, 0);
     const conf = sum(["confirmed"]), pend = sum(["pending", "unconfirmed"]);
     const open = Math.max(0, m.gap - conf);
