@@ -5,6 +5,7 @@
   const $ = id => document.getElementById(id);
   const LANGS = { en: "English", es: "Español", vi: "Tiếng Việt" };
   const T = {
+    program: ["Affordable Homes Program", "Programa de Viviendas Asequibles", "Chương trình Nhà ở Vừa túi tiền"],
     tabCalc: ["Calculator", "Calculadora", "Máy tính"],
     tabDocs: ["Documents", "Documentos", "Giấy tờ"],
     tabOpts: ["Ways to shrink the gap", "Formas de reducir la diferencia", "Cách thu hẹp khoảng chênh lệch"],
@@ -57,6 +58,7 @@
     ["tabCalc", "tabDocs", "tabOpts", "tabPlan", "tabInv", "tabMap", "tabHist", "docsTitle", "optsTitle", "planTitle", "invTitle", "mapTitle", "histTitle", "docLive", "docSamples", "addLand"]
       .forEach(id => setText($(id), T[id][i]));
     setText(document.querySelector("h1"), T.h1[i]);
+    setText(document.querySelector(".program"), T.program[i]);
     document.querySelectorAll(".strip .k").forEach((el, n) => setText(el, T["k" + (n + 1)][i]));
     const drop = document.querySelector("#docDrop b"); if (drop) drop.textContent = T.dropMain[i];
     $("plainTitle").textContent = T.plainTitle[i];

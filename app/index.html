@@ -186,6 +186,15 @@
   .role { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
   .role input { width: auto; margin-top: 3px; accent-color: var(--brand); }
   .role:has(input:checked) { border-color: var(--brand); background: var(--accent-soft); }
+  .brandbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .logo { height: 26px; width: auto; max-width: 100%; display: block; }
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-light { display: none; } :root:not([data-theme="light"]) .logo-dark { display: block; } }
+  :root[data-theme="dark"] .logo-light { display: none; } :root[data-theme="dark"] .logo-dark { display: block; }
+  :root[data-theme="light"] .logo-light { display: block; } :root[data-theme="light"] .logo-dark { display: none; }
+  .brandsep { width: 2px; height: 26px; background: var(--brand); border-radius: 2px; }
+  .program { font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+  @media (max-width: 480px) { .logo { height: 20px; } .brandsep { height: 20px; } .program { font-size: 13px; } }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -221,9 +230,15 @@
 </style>
 
 <div class="wrap">
+  <div class="brandbar">
+    <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
+    <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
+    <span class="brandsep" aria-hidden="true"></span>
+    <span class="program">Affordable Homes Program</span>
+  </div>
   <div class="head">
     <div>
-      <div class="eyebrow">Lane 03 · Fund it · Orange County</div>
+      <div class="eyebrow">Gap Ledger · Orange County · Claude Impact Lab, Lane 03</div>
       <h1>Does this home pencil, and who closes the gap?</h1>
       <p class="lede">The price a family can pay is capped by area income. This page works out that cap from the state formula,
         shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
