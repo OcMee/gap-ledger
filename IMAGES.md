@@ -93,3 +93,13 @@ Style for all: photorealistic, warm natural light, Southern California setting, 
 | 10 | Retired volunteer teaching hammer use | https://www.canva.com/M/MAHaQzsZvXY |
 | 11 | Carrying drywall into a frame | https://www.canva.com/M/MAHaQ6-btsw |
 | 12 | Planting drought-tolerant yard | https://www.canva.com/M/MAHaQ3Prilk |
+| 13 | Volunteers installing roof shingles | https://www.canva.com/M/MAHaQ7ionqE |
+| 14 | Volunteer crew group photo | https://www.canva.com/M/MAHaQyr9wB4 |
+| 15 | Infill lot with "Lot for Sale" sign | https://www.canva.com/M/MAHaQ0siXHU |
+| 17 | Survey map and ruler | https://www.canva.com/M/MAHaQzoh_Hk |
+| 18 | Handshake with a landowner | https://www.canva.com/M/MAHaQ7JxRuQ |
+| 19 | Aerial view of a vacant parcel | https://www.canva.com/M/MAHaQ4pF308 |
+| 20 | City hall permit counter | https://www.canva.com/M/MAHaQ9NjvMI |
+| 22 | Planning commission public comment (check the seal/emblem before use) | https://www.canva.com/M/MAHaQ-2FAeM |
+| 23 | Inspector checking a foundation | https://www.canva.com/M/MAHaQyzuocE |
+| 24 | Permit card at a site | https://www.canva.com/M/MAHaQxqSXv0 |
