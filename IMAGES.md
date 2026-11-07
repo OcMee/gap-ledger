@@ -83,3 +83,13 @@ Style for all: photorealistic, warm natural light, Southern California setting, 
 | 43 | Counselor with a family | https://www.canva.com/M/MAHaQ5jZGyI |
 | 47 | Family with new keys | https://www.canva.com/M/MAHaQ0sP_VI |
 | extra | Volunteers building (first test) | https://www.canva.com/M/MAHaQ1vb62Q |
+| 1 | Block party on a new street | https://www.canva.com/M/MAHaQ9LmQGI |
+| 3 | Community meeting with site plan | https://www.canva.com/M/MAHaQ-q7Ui0 |
+| 4 | Volunteer sign-in table at sunrise | https://www.canva.com/M/MAHaQ7aG1uo |
+| 5 | Home dedication ribbon cutting | https://www.canva.com/M/MAHaQ9ZB4ro |
+| 6 | Volunteer potluck lunch on site | https://www.canva.com/M/MAHaQ29w0gQ |
+| 8 | Measuring and cutting lumber | https://www.canva.com/M/MAHaQ_-mgRg |
+| 9 | Teen volunteers painting a fence | https://www.canva.com/M/MAHaQ6KbzQY |
+| 10 | Retired volunteer teaching hammer use | https://www.canva.com/M/MAHaQzsZvXY |
+| 11 | Carrying drywall into a frame | https://www.canva.com/M/MAHaQ6-btsw |
+| 12 | Planting drought-tolerant yard | https://www.canva.com/M/MAHaQ3Prilk |
