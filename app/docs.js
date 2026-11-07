@@ -408,14 +408,15 @@ other documents: amount_due, due_date, action_needed`;
   $("histSearch").addEventListener("input", renderHistory);
   $("histType").addEventListener("input", renderHistory);
 
-  // ---------- tabs (hash routing: #calculator, #history) ----------
+  // ---------- tabs (hash routing: #calculator, #map, #history) ----------
   function route() {
-    const hist = location.hash === "#history";
-    $("historyView").hidden = !hist;
-    $("calcView").hidden = hist;
-    $("tabHist").toggleAttribute("aria-current", hist); if (hist) $("tabHist").setAttribute("aria-current", "page");
-    $("tabCalc").toggleAttribute("aria-current", !hist); if (!hist) $("tabCalc").setAttribute("aria-current", "page");
-    if (hist) loadHistory();
+    const view = { "#history": "history", "#map": "map" }[location.hash] || "calc";
+    const set = (tab, sec, on) => { $(sec).hidden = !on; if (on) $(tab).setAttribute("aria-current", "page"); else $(tab).removeAttribute("aria-current"); };
+    set("tabCalc", "calcView", view === "calc");
+    set("tabMap", "mapView", view === "map");
+    set("tabHist", "historyView", view === "history");
+    if (view === "history") loadHistory();
+    if (view === "map") window.drawMap?.();
   }
   window.addEventListener("hashchange", route);
   route();
