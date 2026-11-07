@@ -91,6 +91,7 @@
   .calc { font-family: var(--font-num); font-size: 12.5px; background: var(--bg); border-radius: 6px; padding: 10px 12px;
     line-height: 1.7; overflow-wrap: anywhere; }
   .field:has(select) { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
+  @media (max-width: 560px) { .field:has(select) { grid-template-columns: 1fr; } }
   table.stack { min-width: 720px; }
   .stack td:nth-child(1) { width: 26%; } .stack td:nth-child(3) { width: 17%; } .stack td:nth-child(4) { width: 13%; }
   .calc b { font-weight: 500; color: var(--ink); }
@@ -152,7 +153,10 @@
   .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
   .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
   button:disabled { opacity: .55; cursor: default; }
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); display: grid; gap: 4px; max-width: 90ch; }
+  .plainbox p { margin: 0; font-size: 15.5px; line-height: 1.55; }
+  .links { align-items: center; flex-wrap: wrap; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
   .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
     border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -194,11 +198,14 @@
       <p class="lede">The price a family can pay is capped by area income. This page works out that cap from the state formula,
         shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
     </div>
-    <div class="links"><a href="household.html">Household check (Herrera sample)</a></div>
+    <div class="links"><label for="langSel" class="small muted">Language</label> <select id="langSel" style="width:auto"></select>
+      <a href="household.html">Household check (Herrera sample)</a></div>
   </div>
 
   <nav class="tabs" aria-label="Views">
     <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
+    <a href="#documents" id="tabDocs">Documents</a>
+    <a href="#options" id="tabOpts">Ways to shrink the gap</a>
     <a href="#map" id="tabMap">Map</a>
     <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
   </nav>
@@ -236,7 +243,7 @@
         <input id="histSearch" type="search" placeholder="Search by file name, type or text" aria-label="Search history" style="max-width:340px">
         <select id="histType" aria-label="Filter by type" style="max-width:220px"><option value="">All types</option></select>
       </div>
-      <p class="small" id="histEmpty">No documents yet. Read a document on the Calculator tab and it will show up here.</p>
+      <p class="small" id="histEmpty">No documents yet. Read a document on the Documents tab and it will show up here.</p>
       <div class="tablebox"><table id="histTable" hidden>
         <thead><tr><th>Read on</th><th>File</th><th>Type</th><th>What it says</th><th></th></tr></thead>
         <tbody id="histRows"></tbody>
@@ -245,7 +252,7 @@
     </div>
   </section>
 
-  <div id="calcView">
+  <div id="sharedTop">
   <!-- SUMMARY -->
   <section class="strip" aria-label="Summary">
     <div><div class="k">Cost to create one home</div><div class="v num" id="sCost"></div><div class="f" id="sCostF"></div></div>
@@ -254,29 +261,11 @@
     <div><div class="k">Still open after confirmed sources</div><div class="v num bad" id="sOpen"></div><div class="f" id="sOpenF"></div></div>
   </section>
   <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
+  <div class="plainbox"><b id="plainTitle">What this means</b><p id="plainText"></p><p class="small muted" id="langNote" hidden></p></div>
 
-  <!-- DOCUMENTS -->
-  <section class="panel" style="margin-top:16px" aria-labelledby="docsTitle">
-    <header><h2 id="docsTitle">Read documents</h2><span class="pill info">Claude reads, code does the math</span></header>
-    <p class="small muted">Pay stubs, bank statements, Loan Estimates, purchase contracts, development budgets and funding commitment letters.
-      Each value comes with a quote from the document. Nothing changes in the calculator until you click Apply.</p>
-    <div class="alert warn">Use only fictional or properly redacted documents. Files are sent to Claude on your claude.ai account. Blacked-out values show as "Redacted", never guessed.</div>
-    <p class="small" id="docUnavailable" style="margin-top:10px">Document reading works on the claude.ai copy of this page, where Claude can be allowed to read files:
-      <a href="https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE" target="_blank" rel="noopener">open it here</a>.</p>
-    <div id="docControls" hidden>
-      <label class="drop" id="docDrop" for="docInput">
-        <span><b>Drop PDFs or photos here</b>, or click to choose files</span>
-        <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
-        <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
-      </label>
-      <div class="applyrow"><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
-        <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
-    </div>
-    <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
-    <div id="docList" class="doclist"></div>
-    <div id="docHousehold"></div>
-  </section>
+  </div>
 
+  <div id="calcView">
   <div class="grid">
     <!-- LEFT: inputs -->
     <div class="col">
@@ -341,7 +330,55 @@
         <p class="small muted" style="margin-top:8px">Only <b>confirmed</b> money counts as closing the gap. Pending and unconfirmed lines show as hatched. This page has no built-in program amounts, because program terms and funding change.</p>
       </section>
 
-      <section class="panel" aria-labelledby="optsTitle">
+      <section class="panel">
+        <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
+        <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
+        <p class="donor" id="donorText" style="margin-top:10px"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- RATE HISTORY -->
+  <section class="panel" style="margin-top:16px">
+    <header><h2>Rates move, and the gap moves with them</h2>
+      <div class="seg" role="group" aria-label="Time window" id="winSeg">
+        <button data-w="1" aria-pressed="false">1 yr</button><button data-w="5" aria-pressed="true">5 yr</button>
+        <button data-w="10" aria-pressed="false">10 yr</button><button data-w="99" aria-pressed="false">Since 2000</button></div></header>
+    <div class="kpis" id="rateKpis"></div>
+    <svg class="chart" id="chart" viewBox="0 0 1000 380" role="img" aria-label="Weekly 30-year mortgage rate and the gap per home at that rate"></svg>
+    <div class="tip" id="tip">Hover or tap the chart to read a week.</div>
+    <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
+  </section>
+
+  </div><!-- /calcView -->
+
+  <div id="docsView" hidden>
+  <!-- DOCUMENTS -->
+  <section class="panel" aria-labelledby="docsTitle">
+    <header><h2 id="docsTitle">Read documents</h2><span class="pill info">Claude reads, code does the math</span></header>
+    <p class="small muted">Pay stubs, bank statements, Loan Estimates, purchase contracts, development budgets and funding commitment letters.
+      Each value comes with a quote from the document. Nothing changes in the calculator until you click Apply.</p>
+    <div class="alert warn">Use only fictional or properly redacted documents. Files are sent to Claude on your claude.ai account. Blacked-out values show as "Redacted", never guessed.</div>
+    <p class="small" id="docUnavailable" style="margin-top:10px">Document reading works on the claude.ai copy of this page, where Claude can be allowed to read files:
+      <a href="https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE" target="_blank" rel="noopener">open it here</a>.</p>
+    <div id="docControls" hidden>
+      <label class="drop" id="docDrop" for="docInput">
+        <span><b>Drop PDFs or photos here</b>, or click to choose files</span>
+        <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
+        <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
+      </label>
+      <div class="applyrow"><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
+        <span class="small muted">Samples: fictional budget, commitment letter, Loan Estimate, pay stubs and bank statement.</span></div>
+    </div>
+    <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
+    <div id="docList" class="doclist"></div>
+    <div id="docHousehold"></div>
+  </section>
+
+  </div>
+
+  <div id="optsView" hidden>
+      <section class="panel" aria-labelledby="optsTitle" style="max-width:820px">
         <header><h2 id="optsTitle">Ways to shrink the gap</h2><span class="pill info">Try options</span></header>
 
         <h3>Rate buydown</h3>
@@ -371,27 +408,7 @@
         <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
       </section>
 
-      <section class="panel">
-        <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
-        <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
-        <p class="donor" id="donorText" style="margin-top:10px"></p>
-      </section>
-    </div>
   </div>
-
-  <!-- RATE HISTORY -->
-  <section class="panel" style="margin-top:16px">
-    <header><h2>Rates move, and the gap moves with them</h2>
-      <div class="seg" role="group" aria-label="Time window" id="winSeg">
-        <button data-w="1" aria-pressed="false">1 yr</button><button data-w="5" aria-pressed="true">5 yr</button>
-        <button data-w="10" aria-pressed="false">10 yr</button><button data-w="99" aria-pressed="false">Since 2000</button></div></header>
-    <div class="kpis" id="rateKpis"></div>
-    <svg class="chart" id="chart" viewBox="0 0 1000 380" role="img" aria-label="Weekly 30-year mortgage rate and the gap per home at that rate"></svg>
-    <div class="tip" id="tip">Hover or tap the chart to read a week.</div>
-    <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
-  </section>
-
-  </div><!-- /calcView -->
 
   <dialog id="docViewer" aria-labelledby="docViewerTitle">
     <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
@@ -607,6 +624,8 @@ function calc() {
     ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
 
   drawChart();
+  window.LAST = { m, open, conf, rate };
+  window.renderPlain?.();
   window.drawMap?.();
   $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
     <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
@@ -688,3 +707,4 @@ load(SAMPLE);
 <script src="docs.js"></script>
 <script src="projects.js"></script>
 <script src="map.js"></script>
+<script src="i18n.js"></script>

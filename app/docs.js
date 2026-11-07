@@ -94,10 +94,11 @@ ${text ? `Text layer of the PDF (reading order may be scrambled; use the page im
 Reply with only one JSON object:
 {"doc_type": "pay_stub" | "bank_statement" | "loan_estimate" | "purchase_contract" | "development_budget" | "funding_commitment" | "tax_bill" | "insurance_notice" | "hoa_notice" | "other",
  "title": "short name of the document",
- "summary": "1 to 2 plain sentences a family or funder understands, about a 6th grade reading level",
+ "summary": "1 to 2 plain sentences a family or funder understands, about a 6th grade reading level, written in ${window.LANG_NAME ? window.LANG_NAME() : "English"}",
  "fields": [{"key": "...", "label": "...", "value": number or string or null, "evidence": "exact short quote from the document", "redacted": false}],
  "flags": [{"severity": "high" | "medium", "text": "plain-language issue someone could miss", "evidence": "exact short quote"}]}
 
+Write "summary" and each flag "text" in ${window.LANG_NAME ? window.LANG_NAME() : "English"}. Keep "key" values and "evidence" quotes exactly as specified or as written in the document.
 Numbers: no $ or commas. Percent as a number (6.5). Dates as YYYY-MM-DD. Up to 5 flags.
 Use these keys when the document has them:
 pay_stub: person_name, employer, pay_frequency (weekly|biweekly|semimonthly|monthly), hourly_rate, hours_this_period, overtime_hours, gross_this_period, net_this_period, ytd_gross, ytd_through_date, hire_date
@@ -355,8 +356,8 @@ other documents: amount_due, due_date, action_needed`;
     $("histTable").hidden = !list.length;
     $("histEmpty").hidden = !!list.length;
     $("histEmpty").textContent = unavailable
-      ? "History is not available in this browser (storage is blocked, for example in a private window). Documents still work on the Calculator tab."
-      : "No documents yet. Read a document on the Calculator tab and it will show up here.";
+      ? "History is not available in this browser (storage is blocked, for example in a private window). Documents still work on the Documents tab."
+      : "No documents yet. Read a document on the Documents tab and it will show up here.";
     const types = [...new Set(list.map(h => h.result?.doc_type).filter(Boolean))];
     const sel = $("histType"), cur = sel.value;
     sel.innerHTML = `<option value="">All types</option>` + types.map(t => `<option value="${esc(t)}">${esc(TYPE_NAMES[t] || t)}</option>`).join("");
@@ -382,10 +383,10 @@ other documents: amount_due, due_date, action_needed`;
     const file = new File([h.blob], h.name, { type: h.type || h.blob.type });
     if (t.hview) view({ file, name: h.name });
     if (t.hrestore) {
-      if (docs.some(d => d.id === h.id)) { $("histNote").textContent = `${h.name} is already on the Calculator tab.`; return; }
+      if (docs.some(d => d.id === h.id)) { $("histNote").textContent = `${h.name} is already on the Documents tab.`; return; }
       docs.push({ id: h.id, file, name: h.name, status: "done", result: h.result, error: "", applied: false, saved: true });
       render();
-      $("histNote").textContent = `Added ${h.name} to the Calculator tab without reading it again. Click Apply there to use its values.`;
+      $("histNote").textContent = `Added ${h.name} to the Documents tab without reading it again. Click Apply there to use its values.`;
     }
     if (t.hdelete) {
       await deleteHistory(h.id);
@@ -408,13 +409,17 @@ other documents: amount_due, due_date, action_needed`;
   $("histSearch").addEventListener("input", renderHistory);
   $("histType").addEventListener("input", renderHistory);
 
-  // ---------- tabs (hash routing: #calculator, #map, #history) ----------
+  // ---------- tabs (hash routing: #calculator, #documents, #options, #map, #history) ----------
   function route() {
-    const view = { "#history": "history", "#map": "map" }[location.hash] || "calc";
+    const view = { "#history": "history", "#map": "map", "#documents": "docs", "#options": "opts" }[location.hash] || "calc";
     const set = (tab, sec, on) => { $(sec).hidden = !on; if (on) $(tab).setAttribute("aria-current", "page"); else $(tab).removeAttribute("aria-current"); };
     set("tabCalc", "calcView", view === "calc");
+    set("tabDocs", "docsView", view === "docs");
+    set("tabOpts", "optsView", view === "opts");
     set("tabMap", "mapView", view === "map");
     set("tabHist", "historyView", view === "history");
+    // The gap summary stays on top of the three tabs that change it.
+    $("sharedTop").hidden = !["calc", "docs", "opts"].includes(view);
     if (view === "history") loadHistory();
     if (view === "map") window.drawMap?.();
   }
