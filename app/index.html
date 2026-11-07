@@ -151,6 +151,16 @@
   .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
   .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
   button:disabled { opacity: .55; cursor: default; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tabs a:hover { color: var(--ink); }
+  .tabs .count { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+  #histTable { min-width: 680px; }
+  #histTable td { font-size: 13.5px; }
+  #histTable .acts { white-space: nowrap; display: flex; gap: 10px; }
+  #histTable .sum { max-width: 46ch; }
   footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
   @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
 </style>
@@ -166,6 +176,31 @@
     <div class="links"><a href="household.html">Household check (Herrera sample)</a></div>
   </div>
 
+  <nav class="tabs" aria-label="Views">
+    <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
+    <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
+  </nav>
+
+  <section id="historyView" hidden aria-labelledby="histTitle">
+    <div class="panel">
+      <header><h2 id="histTitle">Documents read</h2><button id="histClearAll" hidden>Delete all history</button></header>
+      <p class="small muted">Every document Claude finishes reading is saved here, with what it found and when. History stays in this browser on this computer only.
+        Nobody else can see it, and it is lost if browser data is cleared. Delete anything you no longer need.</p>
+      <div class="alert warn">Saved files stay on this computer until you delete them. Do not keep real household documents here.</div>
+      <div class="applyrow" id="histTools" hidden>
+        <input id="histSearch" type="search" placeholder="Search by file name, type or text" aria-label="Search history" style="max-width:340px">
+        <select id="histType" aria-label="Filter by type" style="max-width:220px"><option value="">All types</option></select>
+      </div>
+      <p class="small" id="histEmpty">No documents yet. Read a document on the Calculator tab and it will show up here.</p>
+      <div class="tablebox"><table id="histTable" hidden>
+        <thead><tr><th>Read on</th><th>File</th><th>Type</th><th>What it says</th><th></th></tr></thead>
+        <tbody id="histRows"></tbody>
+      </table></div>
+      <p class="small muted" id="histNote" role="status" style="margin-top:8px"></p>
+    </div>
+  </section>
+
+  <div id="calcView">
   <!-- SUMMARY -->
   <section class="strip" aria-label="Summary">
     <div><div class="k">Cost to create one home</div><div class="v num" id="sCost"></div><div class="f" id="sCostF"></div></div>
@@ -196,11 +231,6 @@
     <div id="docList" class="doclist"></div>
     <div id="docHousehold"></div>
   </section>
-
-  <dialog id="docViewer" aria-labelledby="docViewerTitle">
-    <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
-    <div id="docViewerBody" class="viewerbody"></div>
-  </dialog>
 
   <div class="grid">
     <!-- LEFT: inputs -->
@@ -285,6 +315,13 @@
     <div class="tip" id="tip">Hover or tap the chart to read a week.</div>
     <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
   </section>
+
+  </div><!-- /calcView -->
+
+  <dialog id="docViewer" aria-labelledby="docViewerTitle">
+    <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
+    <div id="docViewerBody" class="viewerbody"></div>
+  </dialog>
 
   <footer>
     <div><b>Sources.</b> <span id="srcList"></span></div>

@@ -123,6 +123,7 @@ other documents: amount_due, due_date, action_needed`;
       const out = await sample.json(prompt(d.name, text, images.length > 0), opts);
       if (!out || typeof out !== "object" || !Array.isArray(out.fields)) throw { code: "invalid_json" };
       d.result = out; d.status = "done";
+      saveHistory(d);
     } catch (e) {
       d.status = "failed"; d.error = errorCopy(e?.code);
       if (e?.code === "not_granted" || e?.code === "sampling_disabled") { queue.length = 0; }
@@ -307,6 +308,119 @@ other documents: amount_due, due_date, action_needed`;
       status.textContent = "This PDF could not be shown.";
     }
   }
+  // ---------- history: saved in this browser only (IndexedDB) ----------
+  // Every call is wrapped: storage can be blocked (private window, cleared data). The page works without it.
+  const DB_NAME = "gap-ledger", STORE = "docs";
+  let dbp = null, history = [];
+  function openDb() {
+    if (!dbp) dbp = new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open(DB_NAME, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: "id" });
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+    return dbp;
+  }
+  async function tx(mode, fn) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE, mode), st = t.objectStore(STORE), out = fn(st);
+      t.oncomplete = () => res(out?.result); t.onerror = () => rej(t.error);
+    });
+  }
+  async function loadHistory() {
+    try { history = (await tx("readonly", st => st.getAll())) || []; }
+    catch { history = null; }
+    renderHistory();
+  }
+  async function saveHistory(d) {
+    const entry = { id: d.id, name: d.name, type: d.file.type, size: d.file.size, savedAt: new Date().toISOString(),
+      blob: d.file, result: d.result };
+    try { await tx("readwrite", st => st.put(entry)); d.saved = true; }
+    catch { d.saved = false; }
+    await loadHistory();
+  }
+  async function deleteHistory(id) {
+    try { await tx("readwrite", st => st.delete(id)); } catch { /* ignore */ }
+    await loadHistory();
+  }
+
+  function renderHistory() {
+    const unavailable = history === null, list = (history || []).slice().sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+    $("histCount").textContent = list.length ? `(${list.length})` : "";
+    $("histClearAll").hidden = !list.length;
+    $("histTools").hidden = !list.length;
+    $("histTable").hidden = !list.length;
+    $("histEmpty").hidden = !!list.length;
+    $("histEmpty").textContent = unavailable
+      ? "History is not available in this browser (storage is blocked, for example in a private window). Documents still work on the Calculator tab."
+      : "No documents yet. Read a document on the Calculator tab and it will show up here.";
+    const types = [...new Set(list.map(h => h.result?.doc_type).filter(Boolean))];
+    const sel = $("histType"), cur = sel.value;
+    sel.innerHTML = `<option value="">All types</option>` + types.map(t => `<option value="${esc(t)}">${esc(TYPE_NAMES[t] || t)}</option>`).join("");
+    sel.value = types.includes(cur) ? cur : "";
+    const q = $("histSearch").value.trim().toLowerCase();
+    const shown = list.filter(h => (!sel.value || h.result?.doc_type === sel.value) &&
+      (!q || [h.name, TYPE_NAMES[h.result?.doc_type], h.result?.summary, h.result?.title].join(" ").toLowerCase().includes(q)));
+    const fmt = iso => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+    $("histRows").innerHTML = shown.length ? shown.map(h => `<tr>
+      <td class="num" style="white-space:nowrap">${esc(fmt(h.savedAt))}</td>
+      <td style="overflow-wrap:anywhere">${esc(h.name)}</td>
+      <td><span class="pill ok">${esc(TYPE_NAMES[h.result?.doc_type] || "Document")}</span></td>
+      <td class="sum">${esc(h.result?.summary || "")}</td>
+      <td><div class="acts"><button class="linkbtn" data-hview="${h.id}">View</button>
+        <button class="linkbtn" data-hrestore="${h.id}">Add to calculator</button>
+        <button class="linkbtn" data-hdelete="${h.id}">Delete</button></div></td></tr>`).join("")
+      : `<tr><td colspan="5" class="muted">No saved documents match.</td></tr>`;
+  }
+
+  $("histRows").addEventListener("click", async e => {
+    const t = e.target.dataset, h = (history || []).find(x => x.id === (t.hview || t.hrestore || t.hdelete));
+    if (!h) return;
+    const file = new File([h.blob], h.name, { type: h.type || h.blob.type });
+    if (t.hview) view({ file, name: h.name });
+    if (t.hrestore) {
+      if (docs.some(d => d.id === h.id)) { $("histNote").textContent = `${h.name} is already on the Calculator tab.`; return; }
+      docs.push({ id: h.id, file, name: h.name, status: "done", result: h.result, error: "", applied: false, saved: true });
+      render();
+      $("histNote").textContent = `Added ${h.name} to the Calculator tab without reading it again. Click Apply there to use its values.`;
+    }
+    if (t.hdelete) {
+      await deleteHistory(h.id);
+      $("histNote").textContent = `Deleted ${h.name} from history.`;
+    }
+  });
+  // Delete all needs two clicks: the viewer's frame does not show confirm() dialogs.
+  let clearArmed = false;
+  $("histClearAll").addEventListener("click", async () => {
+    if (!clearArmed) {
+      clearArmed = true; $("histClearAll").textContent = "Click again to delete everything";
+      setTimeout(() => { clearArmed = false; $("histClearAll").textContent = "Delete all history"; }, 4000);
+      return;
+    }
+    clearArmed = false; $("histClearAll").textContent = "Delete all history";
+    try { await tx("readwrite", st => st.clear()); } catch { /* ignore */ }
+    await loadHistory();
+    $("histNote").textContent = "Deleted all saved documents from this browser.";
+  });
+  $("histSearch").addEventListener("input", renderHistory);
+  $("histType").addEventListener("input", renderHistory);
+
+  // ---------- tabs (hash routing: #calculator, #history) ----------
+  function route() {
+    const hist = location.hash === "#history";
+    $("historyView").hidden = !hist;
+    $("calcView").hidden = hist;
+    $("tabHist").toggleAttribute("aria-current", hist); if (hist) $("tabHist").setAttribute("aria-current", "page");
+    $("tabCalc").toggleAttribute("aria-current", !hist); if (!hist) $("tabCalc").setAttribute("aria-current", "page");
+    if (hist) loadHistory();
+  }
+  window.addEventListener("hashchange", route);
+  route();
+  loadHistory();
+
   $("docViewerClose").addEventListener("click", () => $("docViewer").close());
   $("docViewer").addEventListener("click", e => { if (e.target === $("docViewer")) $("docViewer").close(); });
   $("docViewer").addEventListener("close", () => { viewToken++; if (viewUrl) { URL.revokeObjectURL(viewUrl); viewUrl = null; } });
