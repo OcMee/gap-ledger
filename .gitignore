@@ -1,3 +1,6 @@
 real-docs/
 *.env
 .env*
+
+# Local LinkedIn drafts: keep out of the public repo
+linkedin/
