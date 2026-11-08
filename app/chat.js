@@ -33,6 +33,7 @@
     if (which === "help") renderHelp();
   };
   $("chatTab-ask").addEventListener("click", () => tab("ask"));
+  window.openHelp = (which = "ask") => { open(true); tab(which); };
   $("chatTab-help").addEventListener("click", () => tab("help"));
 
   // ---------- messages ----------

@@ -71,7 +71,10 @@
   }
   const BASE = atlasBase();
   const STAGES = ["Looking for land", "Land secured", "Design", "Permits", "Fundraising", "Under construction"];
-  let selected = null;
+  let selected = null, zipHit = null;
+  // Straight-line miles between two points (flat-earth approximation, fine at county scale).
+  const miles = (la1, lo1, la2, lo2) => Math.hypot((la2 - la1) * MILES_PER_DEG_LAT, (lo2 - lo1) * MILES_PER_DEG_LAT * Math.cos((la1 + la2) / 2 * Math.PI / 180));
+  const dist = p => zipHit ? miles(zipHit.lat, zipHit.lng, p.lat, p.lng) : null;
 
   const TIER_NAME = id => (TIERS.find(t => t.id === id) || {}).name || id;
   function priced(p) {
@@ -89,12 +92,22 @@
     const filt = $("mapFilter").value, beds = $("mapBeds").value;
     const list = PROJECTS.filter(p => (!filt || p.tier === filt) && (!beds || String(p.beds) === beds || (beds === "3" && p.beds >= 3)));
     let h = BASE;
+    if (zipHit) {
+      const zx = X(zipHit.lng), zy = Y(zipHit.lat), rr = zipHit.radius * s / MILES_PER_DEG_LAT;
+      h += `<circle cx="${zx.toFixed(1)}" cy="${zy.toFixed(1)}" r="${rr.toFixed(1)}" class="ziparea"/>`;
+    }
     for (const p of list) {
       const r = priced(p), cx = X(p.lng), cy = Y(p.lat), rad = 9 + Math.sqrt(p.homes) * 2;
-      h += `<g class="pin ${r.level}${selected === p.id ? " sel" : ""}" data-id="${p.id}" tabindex="0" role="button"
+      const far = zipHit && dist(p) > zipHit.radius;
+      h += `<g class="pin ${r.level}${selected === p.id ? " sel" : ""}${far ? " far" : ""}" data-id="${p.id}" tabindex="0" role="button"
         aria-label="${esc(p.name)}, ${esc(p.city)}, ${p.homes} homes, open gap ${money(r.open)} per home">
         <title>${esc(p.name)}, ${esc(p.city)}: ${money(r.open)} open per home</title>
         <circle cx="${cx}" cy="${cy}" r="${rad}"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" class="pinn">${p.homes}</text></g>`;
+    }
+    if (zipHit) {
+      const zx = X(zipHit.lng), zy = Y(zipHit.lat), right = zx < W - 200;
+      h += `<circle cx="${zx.toFixed(1)}" cy="${zy.toFixed(1)}" r="6" class="zipdot"/>
+        <text x="${(right ? zx + 10 : zx - 10).toFixed(1)}" y="${(zy - 10).toFixed(1)}" text-anchor="${right ? "start" : "end"}" class="zipl">${esc(zipHit.zip)} \u00b7 ${esc(zipHit.city)}</text>`;
     }
     // Only the selected project gets a text label, drawn last so it sits on top and never blocks other pins.
     const sp = list.find(p => p.id === selected);
@@ -107,9 +120,9 @@
     $("mapSvg").setAttribute("viewBox", `0 0 ${W} ${H}`);
     $("mapSvg").innerHTML = h;
     // list view (also the accessible / phone-friendly version of the map)
-    const sorted = list.map(p => [p, priced(p)]).sort((a, b) => b[1].open - a[1].open);
+    const sorted = list.map(p => [p, priced(p)]).sort((a, b) => zipHit ? dist(a[0]) - dist(b[0]) : b[1].open - a[1].open);
     $("mapList").innerHTML = sorted.map(([p, r]) => `<tr class="${selected === p.id ? "now" : ""}">
-      <td><button class="linkbtn" data-pick="${p.id}">${esc(p.name)}</button><div class="small muted">${esc(p.city)} \u00b7 ${esc(p.stage)}</div></td>
+      <td><button class="linkbtn" data-pick="${p.id}">${esc(p.name)}</button><div class="small muted">${esc(p.city)} \u00b7 ${esc(p.stage)}${zipHit ? ` \u00b7 ${dist(p).toFixed(1)} mi from ${esc(zipHit.zip)}` : ""}</div></td>
       <td class="r num">${p.homes}</td><td>${p.beds} bd \u00b7 ${esc(TIER_NAME(p.tier))}</td>
       <td class="r num">${money(r.m.gap)}</td><td class="r num"><span class="pill ${r.level === "ok" ? "ok" : r.level === "warn" ? "warn" : "bad"}">${money(r.open)}</span></td></tr>`).join("")
       || `<tr><td colspan="5" class="muted">No sample projects match these filters.</td></tr>`;
@@ -120,10 +133,11 @@
 
   function card() {
     const p = PROJECTS.find(x => x.id === selected);
-    if (!p) { $("mapCard").innerHTML = `<p class="small muted">Select a pin or a row to see the project's gap and funding.</p>`; return; }
+    if (!p) { if (zipHit) zipCard(); else $("mapCard").innerHTML = `<p class="small muted">Search a ZIP code, or select a pin or a row to see the project's gap and funding.</p>`; return; }
     const r = priced(p);
     $("mapCard").innerHTML = `<div class="flexrow"><h3 style="margin:0">${esc(p.name)}</h3><span class="pill info">${esc(p.stage)}</span></div>
-      <p class="small muted">${esc(p.city)} \u00b7 ${p.homes} homes \u00b7 ${p.beds} bedrooms \u00b7 ${esc(TIER_NAME(p.tier))} buyers \u00b7 sample project</p>
+      ${zipHit ? `<button class="linkbtn small" id="mapBackZip">\u2190 Back to ZIP ${esc(zipHit.zip)} results</button>` : ""}
+      <p class="small muted">${esc(p.city)}${zipHit ? ` (${dist(p).toFixed(1)} mi from ${esc(zipHit.zip)})` : ""} \u00b7 ${p.homes} homes \u00b7 ${p.beds} bedrooms \u00b7 ${esc(TIER_NAME(p.tier))} buyers \u00b7 sample project</p>
       <div class="calc">Cost to create one home: <b>${money(p.cost)}</b><br>
         Affordable price (${esc(TIER_NAME(p.tier).toLowerCase())}, ${p.beds + 1} people, ${r.rate.toFixed(2)}%): <b>${money(Math.min(r.m.price, p.cost))}</b><br>
         Gap per home: <b>${money(r.m.gap)}</b><br>
@@ -132,6 +146,7 @@
       ${p.sources.length ? `<ul class="small" style="margin:8px 0 0;padding-left:18px">${p.sources.map(x => `<li>${esc(x.name)}: ${money(x.amount)}/home, ${esc(STATUSES[x.status].toLowerCase())}</li>`).join("")}</ul>` : `<p class="small" style="margin-top:8px">No funding sources yet.</p>`}
       <div class="applyrow"><button class="primary" id="mapOpen">Open in calculator</button>
         <a class="small" href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=13/${p.lat}/${p.lng}" target="_blank" rel="noopener">See ${esc(p.city)} on OpenStreetMap</a></div>`;
+    if ($("mapBackZip")) $("mapBackZip").onclick = () => { selected = null; draw(); };
     $("mapOpen").onclick = () => {
       $("cost").value = p.cost; $("beds").value = p.beds; $("tier").value = p.tier; $("homes").value = p.homes;
       sources.splice(0, sources.length, ...p.sources.map(x => ({ ...x })));
@@ -141,6 +156,53 @@
     };
   }
 
+
+  // ZIP search: where is it, what can a family pay there, what is nearby, and where to look for real homes.
+  function zipCard() {
+    const z = zipHit, L = window.LAST;
+    const near = PROJECTS.map(p => [p, dist(p), priced(p)]).sort((a, b) => a[1] - b[1]);
+    const inR = near.filter(x => x[1] <= z.radius);
+    const price = L ? money(Math.min(L.m.price, L.m.cost)) : "";
+    const who = L ? `a ${esc(L.m.tierT.name.toLowerCase())} family of ${L.m.hh}` : "a family";
+    const row = ([p, d, r]) => `<li><button class="linkbtn" data-pick="${p.id}">${esc(p.name)}</button>, ${esc(p.city)}: ${d.toFixed(1)} mi · ${p.homes} homes · ${money(r.open)} still open per home</li>`;
+    $("mapCard").innerHTML = `<div class="flexrow"><h3 style="margin:0">ZIP ${esc(z.zip)} · ${esc(z.city)}</h3><span class="pill info">Orange County</span></div>
+      <div class="calc" style="margin-top:8px">What ${who} can pay here: <b>${price}</b> at ${L ? L.rate.toFixed(2) : ""}%<br>
+        <span class="muted">Income limits are set for the whole county, so this cap is the same in every Orange County ZIP. Change the family on the Calculator tab.</span></div>
+      <h3>Sample projects within ${z.radius} miles</h3>
+      ${inR.length ? `<ul class="small" style="margin:0;padding-left:18px">${inR.map(row).join("")}</ul>`
+        : `<p class="small">None within ${z.radius} miles. Nearest: <button class="linkbtn" data-pick="${near[0][0].id}">${esc(near[0][0].name)}</button>, ${near[0][1].toFixed(1)} mi away.</p>`}
+      <p class="small muted" style="margin-top:4px">Sample projects are fictional.</p>
+      <h3>Look for real homes</h3>
+      <ul class="small" style="margin:0;padding-left:18px">
+        <li>Income-restricted homes are usually listed by the city housing office or a nonprofit, not on listing sites. <button class="linkbtn" id="mapAskHelp">Talk to a housing counselor</button></li>
+        <li><a href="https://www.zillow.com/homes/for_sale/${encodeURIComponent(z.zip)}_rb/" target="_blank" rel="noopener">Homes for sale in ${esc(z.zip)} on Zillow</a>: market-rate. Filter to ${price || "the price above"} or less; most will cost more.</li>
+        <li><a href="https://www.openstreetmap.org/?mlat=${z.lat}&mlon=${z.lng}#map=14/${z.lat}/${z.lng}" target="_blank" rel="noopener">See ${esc(z.zip)} on OpenStreetMap</a></li>
+      </ul>
+      <p class="small muted" style="margin-top:6px">ZIP location is an approximate center point. Distances are straight-line miles.</p>`;
+    if ($("mapAskHelp")) $("mapAskHelp").onclick = () => window.openHelp?.("help");
+  }
+  $("mapCard").addEventListener("click", e => { const id = e.target.dataset?.pick; if (id) { selected = id; draw(); } });
+
+  function searchZip() {
+    const z = $("mapZip").value.trim(), note = $("mapZipNote");
+    if (!/^\d{5}$/.test(z)) { note.textContent = "Enter a 5-digit ZIP code, like 92701."; return; }
+    const hit = (window.OC_ZIPS || {})[z];
+    if (!hit) { note.textContent = `${z} is not in our Orange County list. This map covers Orange County only.`; return; }
+    zipHit = { zip: z, lat: hit[0], lng: hit[1], city: hit[2], radius: +$("mapRadius").value };
+    selected = null;
+    const n = PROJECTS.filter(p => dist(p) <= zipHit.radius).length;
+    note.textContent = `${z} is in ${hit[2]}. ${n} sample ${n === 1 ? "project" : "projects"} within ${zipHit.radius} miles.`;
+    $("mapZipClear").hidden = false;
+    draw();
+  }
+  $("mapZipForm").addEventListener("submit", e => { e.preventDefault(); searchZip(); });
+  $("mapRadius").addEventListener("change", () => { if (zipHit) searchZip(); });
+  $("mapZip").addEventListener("input", () => { $("mapZip").value = $("mapZip").value.replace(/\D/g, "").slice(0, 5); });
+  $("mapZipClear").addEventListener("click", () => {
+    zipHit = null; $("mapZip").value = ""; $("mapZipClear").hidden = true;
+    $("mapZipNote").textContent = "Orange County ZIP codes. Shows sample projects nearby and what a family can pay there.";
+    draw();
+  });
   $("mapSvg").addEventListener("click", e => { const g = e.target.closest(".pin"); if (g) { selected = g.dataset.id; draw(); } });
   $("mapSvg").addEventListener("keydown", e => { const g = e.target.closest(".pin"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); selected = g.dataset.id; draw(); } });
   $("mapList").addEventListener("click", e => { const id = e.target.dataset.pick; if (id) { selected = id; draw(); } });
