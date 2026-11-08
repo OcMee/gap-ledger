@@ -356,7 +356,7 @@
       <form class="zipbar" id="mapZipForm" role="search" novalidate aria-label="Search by ZIP code">
         <label for="mapZip"><b>Find homes near a ZIP code</b></label>
         <input id="mapZip" inputmode="numeric" autocomplete="postal-code" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 92701" aria-describedby="mapZipNote">
-        <select id="mapRadius" aria-label="Distance"><option value="3">within 3 miles</option><option value="5" selected>within 5 miles</option><option value="10">within 10 miles</option></select>
+        <select id="mapRadius" aria-label="Distance"><option value="3">within 3 miles</option><option value="5" selected>within 5 miles</option><option value="10">within 10 miles</option><option value="15">within 15 miles</option><option value="25">within 25 miles</option><option value="35">within 35 miles</option><option value="50">within 50 miles</option></select>
         <button class="primary" id="mapZipGo">Search</button><button type="button" id="mapZipClear" hidden>Clear</button>
         <span class="small muted" id="mapZipNote" role="status">Orange County ZIP codes. Shows sample projects nearby and what a family can pay there.</span>
       </form>
