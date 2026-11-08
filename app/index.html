@@ -289,6 +289,14 @@
   #mapSvg .zipdot { fill: var(--ink); stroke: var(--surface); stroke-width: 2.5; }
   #mapSvg .zipl { fill: var(--ink); font: 700 13px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; pointer-events: none; }
   #mapSvg .pin.far { opacity: .35; }
+  .mapframe { position: relative; }
+  .mapzoom { position: absolute; top: 120px; left: 10px; display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .mapzoom button { width: 36px; height: 34px; padding: 0; border: 0; border-radius: 0; border-bottom: 1px solid var(--line); font-size: 18px; font-weight: 600; line-height: 1; background: var(--surface); color: var(--ink); }
+  .mapzoom button:last-child { border-bottom: 0; font-size: 16px; }
+  .mapzoom button:hover:not(:disabled) { background: var(--accent-soft); }
+  #mapSvg { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  #mapSvg.dragging { cursor: grabbing; }
+  #mapSvg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   /* PDF report row */
   .reportrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0 4px; }
   /* Help chat */
@@ -366,7 +374,9 @@
         <span class="legend" style="margin:0"><span><i style="background:var(--good)"></i>Fully funded</span><span><i style="background:var(--warn)"></i>Under 25% open</span><span><i style="background:var(--bad)"></i>25%+ open</span></span>
       </div>
       <div class="mapgrid">
-        <div class="mapbox"><svg id="mapSvg" viewBox="0 0 900 600" role="group" aria-label="Schematic map of Orange County with sample projects"></svg>
+        <div class="mapbox"><div class="mapframe"><svg id="mapSvg" viewBox="0 0 900 600" role="group" tabindex="0" aria-label="Map of Orange County with sample projects. Arrow keys move, plus and minus zoom, 0 resets."></svg>
+          <div class="mapzoom" role="group" aria-label="Map zoom"><button type="button" id="mapZoomIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="mapZoomOut" aria-label="Zoom out" title="Zoom out">−</button><button type="button" id="mapZoomHome" aria-label="Reset view" title="Reset view">⌂</button></div></div>
+          <p class="small muted" style="margin:4px 0 0">Zoom with + and − (or double-click), drag to move. Ctrl + scroll also zooms.</p>
           <p class="small muted">Atlas view. County boundaries: US Census Bureau (simplified). City positions are approximate city centers; projects are fictional samples.</p></div>
         <div class="mapside">
           <div id="mapCard" class="panel"></div>
