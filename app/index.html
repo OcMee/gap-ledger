@@ -3,7 +3,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   /* Layout: a project ledger. Summary strip on top, then input columns left, results right, then rate history full width. */
   :root {
@@ -326,27 +326,90 @@
   .supitem { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; flex-shrink: 0; }
   .supitem > b { display: block; margin-bottom: 2px; }
   @media print { #chatFab, #chatPanel { display: none !important; } }
+
+  /* ===== OCMEE polish layer: brand masthead, sticky tabs, ledger equation, calmer panels, brand footer ===== */
+  :root { --shadow: 0 1px 2px rgba(43, 41, 37, .05), 0 4px 14px rgba(43, 41, 37, .05); --r: 12px; --glass: rgba(250, 248, 244, .88); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --shadow: 0 1px 2px rgba(0, 0, 0, .3); --glass: rgba(28, 30, 34, .88); } }
+  :root[data-theme="dark"] { --shadow: 0 1px 2px rgba(0, 0, 0, .3); --glass: rgba(28, 30, 34, .88); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+  body { border-top: 5px solid var(--brand); }
+  .wrap { padding-block: 0 48px; }
+  .masthead { display: grid; gap: 0; }
+  .brandbar { padding: 18px 0 16px; margin-bottom: 0; border-bottom: 1px solid var(--line); }
+  .brandbar .links { margin-left: auto; }
+  .hero { padding: 30px 0 22px; display: grid; gap: 10px; max-width: 900px; }
+  .hero h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+  .hero .lede { font-size: 16.5px; line-height: 1.6; max-width: 68ch; margin: 0; }
+  .herofacts { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .herofacts li { font-size: 12.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 4px 11px; display: inline-flex; align-items: center; gap: 6px; }
+  .herofacts li b { color: var(--ink); font-weight: 600; }
+  .herofacts .warnfact { background: var(--warn-soft); border-color: transparent; color: var(--warn); font-weight: 600; }
+  .herofacts .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+  /* Sticky tab bar: scrolls sideways on phones instead of wrapping into rows */
+  .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--glass); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 2px; margin: 0 0 20px; padding: 8px 0 0; border-bottom: 1px solid var(--line); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs a { white-space: nowrap; padding: 10px 14px 11px; border-radius: 8px 8px 0 0; }
+  .tabs a:hover { background: var(--accent-soft); }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom: 3px solid var(--brand); background: none; }
+  /* Ledger equation: cost minus what the family can pay equals the gap */
+  .strip { gap: 14px; background: none; border: 0; border-radius: 0; overflow: visible; }
+  .strip > div { position: relative; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px 18px; }
+  .strip .k { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; }
+  .strip .v { font-size: 30px; line-height: 1.25; margin-top: 4px; }
+  .strip > div:nth-child(4) { border-color: var(--bad); background: var(--bad-soft); }
+  @media (min-width: 901px) {
+    .strip > div:nth-child(2)::before, .strip > div:nth-child(3)::before { position: absolute; left: -21px; top: 50%; transform: translateY(-50%); z-index: 1;
+      width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--surface); font: 600 17px/1 var(--font-num); }
+    .strip > div:nth-child(2)::before { content: "\2212"; }
+    .strip > div:nth-child(3)::before { content: "="; background: var(--brand); color: var(--on-brand); }
+  }
+  .bar { height: 40px; border-radius: 8px; }
+  .barbox { margin: 16px 0 6px; }
+  .plainbox { border-radius: 0 var(--r) var(--r) 0; padding: 14px 18px; }
+  /* Panels */
+  .panel { border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
+  .panel > header { padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 18px; letter-spacing: -.005em; text-wrap: balance; }
+  .grid, .col { gap: 18px; }
+  .optcard, .invcard { border-radius: var(--r); box-shadow: var(--shadow); }
+  button, .navbtn { border-radius: 8px; transition: background-color .15s, filter .15s, border-color .15s; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.06); }
+  button:not(.primary):not(.linkbtn):not(.x):hover:not(:disabled) { border-color: var(--accent); }
+  input:focus, select:focus { border-color: var(--accent); }
+  /* Brand footer */
+  .sitefoot { margin-top: 40px; padding-top: 22px; border-top: 3px solid var(--brand); display: grid; gap: 18px; max-width: none; font-size: 13px; }
+  .footbrand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .footbrand .logo { height: 22px; }
+  .footcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  .footcols b { color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .footcols p { margin: 6px 0 8px; line-height: 1.55; }
+  @media (max-width: 760px) { .footcols { grid-template-columns: 1fr; } .brandbar .links { margin-left: 0; width: 100%; } }
+  @media (max-width: 560px) { .herofacts li { display: inline-block; line-height: 1.45; } .herofacts .dot { display: inline-block; margin-right: 5px; vertical-align: 1px; }
+    .brandsep { display: none; } .brandbar { gap: 8px 14px; } .hero { padding-top: 20px; } .strip .v { font-size: 26px; } }
+  @media (prefers-reduced-motion: reduce) { button, .navbtn { transition: none; } }
 </style>
 
 <div class="wrap">
-  <div class="brandbar">
-    <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
-    <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
-    <span class="brandsep" aria-hidden="true"></span>
-    <span class="program">Affordable Homes Program</span>
-  </div>
-  <div class="head">
-    <div>
+  <header class="masthead">
+    <div class="brandbar">
+      <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
+      <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
+      <span class="brandsep" aria-hidden="true"></span>
+      <span class="program">Affordable Homes Program</span>
+      <div class="links"><label for="langSel" class="small muted">Language</label> <select id="langSel" style="width:auto"></select>
+        <a class="navbtn" href="household.html" title="Opens a separate page that checks one family's documents. Use Back to return.">Household check (Herrera sample) →</a></div>
+    </div>
+    <div class="hero">
       <div class="eyebrow">Gap Ledger · Orange County · Claude Impact Lab, Lane 03</div>
       <h1>Does this home pencil, and who closes the gap?</h1>
       <p class="lede">The price a family can pay is capped by area income. This page works out that cap from the state formula,
         shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
+      <ul class="herofacts" id="heroFacts" aria-label="Data used"></ul>
     </div>
-    <div class="links"><label for="langSel" class="small muted">Language</label> <select id="langSel" style="width:auto"></select>
-      <a class="navbtn" href="household.html" title="Opens a separate page that checks one family's documents. Use Back to return.">Household check (Herrera sample) →</a></div>
-  </div>
+  </header>
 
-  <nav class="tabs" aria-label="Views">
+  <nav class="tabs" aria-label="Views" id="tabsNav">
     <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
     <a href="#documents" id="tabDocs">Documents</a>
     <a href="#options" id="tabOpts">Ways to shrink the gap</a>
@@ -699,11 +762,19 @@
     <div id="docViewerBody" class="viewerbody"></div>
   </dialog>
 
-  <footer>
-    <div><b>Sources.</b> <span id="srcList"></span></div>
-    <div>Explains numbers only. Not legal, lending or investment advice. Check program terms with the program and a housing counselor.
-      Sample values come from the fictional Claude Impact Lab document pack.</div>
-    <div><button id="reset">Reset sample</button></div>
+  <footer class="sitefoot">
+    <div class="footbrand">
+      <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
+      <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
+      <span class="program">Affordable Homes Program</span>
+      <span class="small muted">Built at Claude Impact Lab, Orange County</span>
+    </div>
+    <div class="footcols">
+      <div><b>Sources</b><p class="small"><span id="srcList"></span></p></div>
+      <div><b>About these numbers</b><p class="small">Explains numbers only. Not legal, lending or investment advice. Check program terms with the program and a housing counselor.
+        Sample values come from the fictional Claude Impact Lab document pack.</p></div>
+      <div><b>Start over</b><p class="small">Put every input back to the sample family and home.</p><button id="reset">Reset sample</button></div>
+    </div>
   </footer>
 </div>
 
@@ -980,6 +1051,8 @@ function calc() {
     `Still eligible together; a market-rate home budget rises to about ${money(marketPrice)}`, !co ? "" : lim && inc > lim ? "bad" : "good");
   setRes("eqRes", eq > 0 ? `Closes ${money(eqGain)} of the gap per home; repay ${(eq * 100).toFixed(0)}% of the home's value later` : "Set a program share above 0% to see the effect", eq > 0 ? "good" : "");
 
+  $("heroFacts").innerHTML = `<li><span class="dot ok"></span>30-year rate <b>${rate.toFixed(2)}%</b>${$("rateMode").value === "custom" ? " (custom)" : ` · week of ${fmtDate(LATEST[0])}`}</li>
+    <li>Income limits <b>${esc(t.name)}</b> · ${fmtDate(t.effective)}</li><li>Formula <b>CA H&amp;S Code 50052.5</b></li><li class="warnfact">Sample family and home</li>`;
   drawChart();
   window.LAST = { m, open, conf, rate, homes };
   window.renderPlain?.();
