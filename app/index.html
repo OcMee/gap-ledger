@@ -280,6 +280,36 @@
   #histTable .sum { max-width: 46ch; }
   footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
   @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+
+  /* PDF report row */
+  .reportrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0 4px; }
+  /* Help chat */
+  #chatFab { position: fixed; right: 20px; bottom: 20px; z-index: 50; border-radius: 999px; padding: 12px 18px; font-weight: 600;
+    background: var(--brand, #FF8710); color: #2b2925; border: 0; box-shadow: 0 6px 20px rgba(0,0,0,.18); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  #chatFab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #chatPanel { position: fixed; right: 20px; bottom: 76px; z-index: 50; width: min(380px, calc(100vw - 32px)); max-height: min(620px, calc(100vh - 110px));
+    display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.22); overflow: hidden; }
+  #chatPanel[hidden] { display: none !important; }
+  .chathead { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); gap: 8px; }
+  .chattabs { display: flex; gap: 4px; }
+  .chattabs button { border: 0; background: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .chattabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); }
+  .chatpane { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  #chatLog { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 160px; }
+  .msg { max-width: 88%; padding: 8px 11px; border-radius: 12px; white-space: pre-wrap; line-height: 1.4; font-size: 14px; overflow-wrap: anywhere; }
+  .msg.bot { background: var(--bg); border: 1px solid var(--line); align-self: flex-start; }
+  .msg.me { background: var(--brand, #FF8710); color: #2b2925; align-self: flex-end; }
+  .msg.note { background: none; border: 0; color: var(--muted); font-size: 12.5px; padding: 0 4px; }
+  #chatChips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+  .chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chatform { display: flex; gap: 6px; padding: 8px 12px 4px; border-top: 1px solid var(--line); }
+  .chatform textarea { flex: 1; resize: none; height: 40px; font: inherit; font-size: 14px; }
+  .chatfoot { padding: 0 12px 10px; }
+  #chatPane-help { padding: 12px; overflow-y: auto; gap: 10px; }
+  .supitem { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; flex-shrink: 0; }
+  .supitem > b { display: block; margin-bottom: 2px; }
+  @media print { #chatFab, #chatPanel { display: none !important; } }
 </style>
 
 <div class="wrap">
@@ -372,6 +402,7 @@
   </section>
   <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
   <div class="plainbox"><b id="plainTitle">What this means</b><p id="plainText"></p><p class="small muted" id="langNote" hidden></p></div>
+  <div class="reportrow"><button class="primary" id="pdfBtn">Download PDF report</button><span class="small muted" id="pdfNote" role="status">The numbers on this page, the formula steps and the sources, in one PDF.</span></div>
 
   </div>
 
@@ -651,6 +682,39 @@
   </footer>
 </div>
 
+<button id="chatFab" aria-controls="chatPanel" aria-expanded="false"><span aria-hidden="true">💬</span> Ask a question</button>
+<section id="chatPanel" role="dialog" aria-label="Help and support" hidden>
+  <div class="chathead">
+    <div class="chattabs" role="tablist">
+      <button role="tab" id="chatTab-ask" aria-selected="true" aria-controls="chatPane-ask">Ask</button>
+      <button role="tab" id="chatTab-help" aria-selected="false" aria-controls="chatPane-help">Contact support</button>
+    </div>
+    <button class="x" id="chatClose" aria-label="Close help">×</button>
+  </div>
+  <div class="chatpane" id="chatPane-ask" role="tabpanel">
+    <div id="chatLog" aria-live="polite"></div>
+    <div id="chatChips" aria-label="Quick questions"></div>
+    <div class="chatform">
+      <textarea id="chatInput" aria-label="Your question" placeholder="Ask about the price or the gap"></textarea>
+      <button class="primary" id="chatSend">Send</button><button id="chatStop" hidden>Stop</button>
+    </div>
+    <p class="small muted chatfoot"><span id="chatMode"></span> Don't type SSNs, account numbers or addresses. Not legal or loan advice.</p>
+  </div>
+  <div class="chatpane" id="chatPane-help" role="tabpanel" hidden>
+    <div class="supitem"><b>Free housing counselor</b>HUD-approved counselors help with budgets, credit and down-payment programs, usually at no cost.<br>
+      <a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">Find a counselor near you</a></div>
+    <div class="supitem"><b>211 Orange County</b>Call <strong>2-1-1</strong> for local help with housing, food and bills, any time.<br>
+      <a href="https://www.211oc.org" target="_blank" rel="noopener">211oc.org</a></div>
+    <div class="supitem"><b>Email the program</b>
+      <a class="primary" id="supMail" hidden>Write an email with my numbers</a>
+      <p class="small muted" id="supMailNote" style="margin:4px 0"></p>
+      <label class="small" for="supEmail">Program support email (staff)</label>
+      <input id="supEmail" type="email" placeholder="help@your-program.org" autocomplete="off">
+    </div>
+    <div class="supitem"><b>Share your numbers</b>Copy a short summary to send to a counselor or lender.<br>
+      <button id="supCopy" style="margin-top:6px">Copy summary</button> <span class="small muted" id="supCopyNote" role="status"></span></div>
+  </div>
+</section>
 <script src="limits.js"></script>
 <script src="rates.js"></script>
 <script>
@@ -982,4 +1046,7 @@ load(SAMPLE);
 <script src="programs.js"></script>
 <script src="plan.js"></script>
 <script src="involved.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="report.js"></script>
+<script src="chat.js"></script>
 <script src="i18n.js"></script>

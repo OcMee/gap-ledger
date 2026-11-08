@@ -6,6 +6,8 @@ Open `app/index.html` in a browser. No install, no server, no login.
 
 - `app/index.html`: gap calculator. Statute price cap from dated HCD income limits, rate sensitivity and history, funding stack, donor view.
 - `app/docs.js`: document reading. Claude (on the viewer's claude.ai account) extracts fields with quotes; code does the math; nothing applies until you click Apply. Works on the claude.ai copy of the page only.
+- `app/chat.js`: help chat and Contact support. On claude.ai, Claude answers using only the numbers on the page; elsewhere, quick answers are built in code. Support links: HUD counselor finder, 211 Orange County, and a staff-set program email (saved in the browser only).
+- `app/report.js`: "Download PDF report" on the Calculator. Builds the PDF from what the page shows (summary, formula steps, rate table, funding stack, sources) with jsPDF 2.5.1 (`app/vendor/`, MIT license).
 - `tools/gen_project_docs.py`: makes the fictional budget (doc 10) and commitment letter (doc 09).
 - `app/household.html`: household check on the fictional Herrera documents.
 - `app/limits.js`: Orange County 2026 income limits, hand-copied from HCD PDFs. Check against the source.
