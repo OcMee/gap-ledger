@@ -1,0 +1,48 @@
+<!-- Gap Ledger card for the OCMEE Software Automation page.
+     Paste this whole block into an "HTML / embed / custom code" element on the page.
+     Self-contained: no external CSS or JS. Image and link point to https://gapledger.ocmeed.com -->
+<div class="ocm-gl-card">
+  <style>
+    .ocm-gl-card { --o: #ff8710; --ink: #2b2925; --muted: #66635c; --line: #e7e2d7; --paper: #fffdf9;
+      font-family: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink);
+      max-width: 1040px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-top: 5px solid var(--o);
+      border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); box-shadow: 0 4px 18px rgba(43,41,37,.07); }
+    .ocm-gl-card * { box-sizing: border-box; }
+    .ocm-gl-card .shot { display: block; background: #faf8f4; border-right: 1px solid var(--line); }
+    .ocm-gl-card .shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; aspect-ratio: 16 / 9; }
+    .ocm-gl-card .body { padding: 26px 28px; display: grid; gap: 12px; align-content: center; }
+    .ocm-gl-card .tag { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #9e5404; }
+    .ocm-gl-card h3 { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 800; letter-spacing: -.01em; }
+    .ocm-gl-card p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
+    .ocm-gl-card .eq { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 14px; color: var(--ink);
+      background: #fdeedd; border-radius: 8px; padding: 8px 12px; }
+    .ocm-gl-card ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: var(--ink); }
+    .ocm-gl-card .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .ocm-gl-card a.btn { display: inline-block; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 15px; text-decoration: none; }
+    .ocm-gl-card a.primary { background: var(--o); color: #1a1205; }
+    .ocm-gl-card a.ghost { border: 1px solid var(--line); color: var(--ink); }
+    .ocm-gl-card a.btn:focus-visible { outline: 3px solid #9e5404; outline-offset: 2px; }
+    .ocm-gl-card .note { font-size: 12px; }
+    @media (max-width: 760px) { .ocm-gl-card { grid-template-columns: 1fr; } .ocm-gl-card .shot { border-right: 0; border-bottom: 1px solid var(--line); } }
+  </style>
+  <a class="shot" href="https://gapledger.ocmeed.com" target="_blank" rel="noopener">
+    <img src="https://gapledger.ocmeed.com/preview.jpg" alt="Gap Ledger: the gap between the cost to build a home and what a lower-income family can pay" loading="lazy" width="1280" height="720">
+  </a>
+  <div class="body">
+    <div class="tag">Affordable Homes Program &middot; Built with Claude</div>
+    <h3>Gap Ledger</h3>
+    <p>Does an affordable home pencil, and who closes the gap? Built at the Claude Impact Lab: UCI &times; SoCal Affordable Housing.</p>
+    <div class="eq">$585,000 to build &minus; $243,004 a family can pay = $341,996 gap</div>
+    <ul>
+      <li>Price cap from California law and dated state income limits</li>
+      <li>Weekly mortgage rates and how they move the gap</li>
+      <li>Ways to close it: programs, land trusts, shared equity, donors</li>
+      <li>Action plan, Orange County map and ZIP search, PDF report</li>
+    </ul>
+    <div class="cta">
+      <a class="btn primary" href="https://gapledger.ocmeed.com" target="_blank" rel="noopener">Try the demo</a>
+      <a class="btn ghost" href="https://github.com/OcMee/gap-ledger" target="_blank" rel="noopener">View the code</a>
+    </div>
+    <p class="note">Prototype with fictional sample data. Not legal or lending advice.</p>
+  </div>
+</div>
