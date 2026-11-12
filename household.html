@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gap Calculator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* OCMEE brand, light theme only (this page is a simple sample check). */
+  :root {
+    --bg: #faf8f4; --card: #fffdf9; --ink: #2b2925; --muted: #66635c; --line: #e7e2d7;
+    --accent: #9e5404; --brand: #ff8710; --on-brand: #1a1205; --green: #2f7a4f; --blue: #2f6d8c; --red: #b3362b; --amber: #8a6a00;
+    --chip: #f1ede4; color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 24px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  .eyebrow { color: var(--accent); letter-spacing: .12em; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+  h1 { font-family: "Montserrat", sans-serif; font-weight: 700; font-weight: 500; font-size: 36px; margin: 4px 0; }
+  h2 { font-family: "Montserrat", sans-serif; font-weight: 500; font-size: 22px; margin: 0 0 12px; }
+  h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
+  .sub { color: var(--muted); margin: 0; }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 48px; display: grid; gap: 16px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .full { grid-column: 1 / -1; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } h1 { font-size: 28px; } }
+
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; gap: 8px; align-items: center;
+    padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .row label { font-size: 14px; }
+  .row input, .row select { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+    font: inherit; font-size: 14px; background: #fff; text-align: right; }
+  .row select { text-align: left; }
+  .row.wide { grid-template-columns: minmax(0, 1fr) 230px auto; }
+  .src { font-size: 11px; background: var(--chip); color: var(--muted); padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+  .src.calc { background: #e8f0f8; color: var(--blue); }
+  .src.you { background: #fbeee6; color: var(--accent); }
+  .out { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; }
+  .out b { font-variant-numeric: tabular-nums; }
+  .formula { font-size: 12px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+
+  .big { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 860px) { .big { grid-template-columns: 1fr; } }
+  .stat { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stat .label { font-size: 13px; color: var(--muted); }
+  .stat .value { font-family: "Montserrat", sans-serif; font-size: 30px; font-variant-numeric: tabular-nums; }
+  .stat.red .value { color: var(--red); } .stat.green .value { color: var(--green); }
+
+  .bar { display: flex; height: 46px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); margin: 8px 0; }
+  .bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px;
+    font-weight: 600; white-space: nowrap; overflow: hidden; transition: flex-basis .4s ease; min-width: 0; }
+  .seg-family { background: var(--green); } .seg-sub { background: var(--blue); }
+  .seg-sub:nth-child(odd) { background: #4f86bf; } .seg-gap { background: var(--red); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+  table.subs { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.subs th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px; }
+  table.subs td { padding: 4px; }
+  table.subs input, table.subs select { width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 14px; }
+  .backbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+  .backbtn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 8px; background: var(--brand); color: var(--on-brand);
+    font-weight: 600; font-size: 14px; text-decoration: none; }
+  .backbtn:hover { opacity: .9; }
+  .backbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .backnote { font-size: 13px; color: var(--muted); }
+  .btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .btn.primary { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+  .btn:hover { filter: brightness(.96); }
+  .x { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+
+  .flags { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .flags li { border-left: 4px solid var(--amber); background: #fdf8ee; padding: 10px 12px; border-radius: 6px; font-size: 14px; }
+  .flags li.high { border-color: var(--red); background: #fcf0ee; }
+  .flags li .src { margin-left: 6px; }
+  .summary { font-size: 17px; line-height: 1.65; background: #f6f1ea; border-radius: 12px; padding: 16px 18px; }
+  .summary p { margin: 0 0 10px; }
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .toggle button { border: none; background: #fff; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .toggle button.on { background: var(--brand); color: var(--on-brand); }
+  .note { font-size: 12px; color: var(--muted); }
+  .flex { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  footer { max-width: 1200px; margin: 0 auto; padding: 0 16px 32px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<nav class="backbar" aria-label="Back">
+  <a class="backbtn" href="index.html">← Back to Gap Ledger</a>
+  <img src="img/ocmee-logo-black.png" alt="OCMEE Design" style="height:20px;width:auto;max-width:100%" width="900" height="111">
+  <span class="backnote">Household check: one family's documents (fictional Herrera sample)</span>
+</nav>
+<header>
+  <div class="eyebrow">Lane 03 · Fund it · Claude Impact Lab, Orange County</div>
+  <h1>Does it pencil? Who closes the gap?</h1>
+  <p class="sub">Cost of the home − what the family can pay − help from programs = the gap. Every number shows where it came from.</p>
+</header>
+
+<main>
+  <!-- RESULT -->
+  <section class="card full" id="result">
+    <div class="flex"><h2 id="familyName">The gap</h2><span class="note">Sample: fictional Herrera family (docs 01–04)</span></div>
+    <div class="big">
+      <div class="stat"><div class="label">Home costs</div><div class="value" id="sCost">–</div><div class="note" id="sCostNote"></div></div>
+      <div class="stat green"><div class="label">Family can afford</div><div class="value" id="sAfford">–</div><div class="note" id="sAffordNote"></div></div>
+      <div class="stat red"><div class="label">Gap left to close</div><div class="value" id="sGap">–</div><div class="note" id="sGapNote"></div></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="legend" id="legend"></div>
+
+    <h3>Upfront cash</h3>
+    <div class="bar" id="cashBar"></div>
+    <div class="legend" id="cashLegend"></div>
+  </section>
+
+  <!-- FAMILY -->
+  <section class="card">
+    <h2>1. What the family can pay</h2>
+    <h3>Applicant 1 · Luis (pay stub, doc 01)</h3>
+    <div class="row"><label>Hourly pay</label><input id="luisRate" type="number" step="0.01"><span class="src">Doc 01</span></div>
+    <div class="row"><label>Year-to-date gross</label><input id="luisYTD" type="number" step="0.01"><span class="src">Doc 01</span></div>
+    <div class="row"><label>YTD as of</label><input id="luisYTDDate" type="date"><span class="src">Doc 01</span></div>
+    <div class="row wide"><label>Count income as</label>
+      <select id="luisMethod"><option value="base">Base pay only (no overtime)</option><option value="ytd">Year-to-date average (with overtime)</option></select><span class="src you">You choose</span></div>
+    <div class="out"><span>Monthly gross <span class="formula" id="luisF"></span></span><b id="luisMo"></b></div>
+
+    <h3>Applicant 2 · Maria (pay stub, doc 02)</h3>
+    <div class="row"><label>This check (every 2 weeks)</label><input id="mariaCheck" type="number" step="0.01"><span class="src">Doc 02</span></div>
+    <div class="row"><label>Year-to-date gross</label><input id="mariaYTD" type="number" step="0.01"><span class="src">Doc 02</span></div>
+    <div class="row"><label>Job start date</label><input id="mariaStart" type="date"><span class="src">Doc 02</span></div>
+    <div class="row wide"><label>Count income as</label>
+      <select id="mariaMethod"><option value="ytd">Average since start date</option><option value="check">Pace of this check only</option></select><span class="src you">You choose</span></div>
+    <div class="out"><span>Monthly gross <span class="formula" id="mariaF"></span></span><b id="mariaMo"></b></div>
+
+    <h3>Monthly debts (bank statement, doc 03)</h3>
+    <div class="row"><label>Auto loan</label><input id="dAuto" type="number" step="0.01"><span class="src">Doc 03</span></div>
+    <div class="row"><label>Credit card</label><input id="dCard" type="number" step="0.01"><span class="src">Doc 03</span></div>
+    <div class="row"><label>Pay-later plans (SplitPay, FlexPay)</label><input id="dPayLater" type="number" step="0.01"><span class="src">Doc 03</span></div>
+
+    <h3>Cash on hand (doc 03)</h3>
+    <div class="row"><label>Savings</label><input id="savings" type="number" step="0.01"><span class="src">Doc 03</span></div>
+    <div class="row"><label>Checking</label><input id="checking" type="number" step="0.01"><span class="src">Doc 03</span></div>
+    <div class="row wide"><label>Use checking for closing?</label>
+      <select id="useChecking"><option value="no">No, keep it for monthly bills</option><option value="yes">Yes</option></select><span class="src you">You choose</span></div>
+
+    <h3>Affordable share of income</h3>
+    <div class="flex"><span>Housing should cost at most <b id="pctLabel"></b> of gross income</span><span class="src you">You set</span></div>
+    <input id="pct" type="range" min="25" max="40" step="1">
+    <p class="note">The slide says families can pay 30–35% of income. This is a planning target, not a lender rule.</p>
+  </section>
+
+  <!-- HOME -->
+  <section class="card">
+    <h2>2. What the home costs</h2>
+    <div class="row wide"><label>Cost basis</label>
+      <select id="costMode"><option value="price">Sale price (Loan Estimate)</option><option value="build">Cost to build (land + soft + hard)</option></select><span class="src you">You choose</span></div>
+    <div id="priceBox">
+      <div class="row"><label>Sale price</label><input id="price" type="number" step="1000"><span class="src">Doc 04</span></div>
+    </div>
+    <div id="buildBox" hidden>
+      <div class="row"><label>Land per home</label><input id="land" type="number" step="1000"><span class="src you">Enter</span></div>
+      <div class="row"><label>Design, permits, fees</label><input id="soft" type="number" step="1000"><span class="src you">Enter</span></div>
+      <div class="row"><label>Construction</label><input id="hard" type="number" step="1000"><span class="src you">Enter</span></div>
+    </div>
+
+    <h3>Loan terms (Loan Estimate, doc 04)</h3>
+    <div class="row"><label>Interest rate (start) %</label><input id="rate" type="number" step="0.001"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Max rate by year 8 %</label><input id="maxRate" type="number" step="0.001"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Down payment %</label><input id="downPct" type="number" step="0.1"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Mortgage insurance / month</label><input id="pmi" type="number" step="1"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Escrow: tax + insurance / month</label><input id="escrow" type="number" step="1"><span class="src">Doc 04</span></div>
+    <div class="row"><label>HOA dues / month</label><input id="hoa" type="number" step="1"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Payment shown on Loan Estimate</label><input id="lePayment" type="number" step="1"><span class="src">Doc 04</span></div>
+    <div class="row"><label>Cash to close</label><input id="cashToClose" type="number" step="1"><span class="src">Doc 04</span></div>
+
+    <h3>True monthly cost of this home</h3>
+    <div class="out"><span>Principal &amp; interest <span class="formula">30-yr amortized</span></span><b id="oPI"></b></div>
+    <div class="out"><span>Mortgage insurance + escrow + HOA</span><b id="oOther"></b></div>
+    <div class="out"><span><b>Total per month</b></span><b id="oTotal"></b></div>
+    <div class="out"><span>Share of family income</span><b id="oShare"></b></div>
+    <div class="out"><span>With other debts</span><b id="oShareDebt"></b></div>
+    <p class="note" id="scaleNote">Mortgage insurance and escrow scale with price, using the ratios on the Loan Estimate.</p>
+  </section>
+
+  <!-- SUBSIDIES -->
+  <section class="card full">
+    <div class="flex"><h2>3. Who closes the gap?</h2><button class="btn primary" id="addSub">+ Add a program or source</button></div>
+    <p class="note">Add each program with its real amount and where you got it. This tool has no built-in program amounts, because rules and limits change. Ask the program or a housing counselor.</p>
+    <table class="subs">
+      <thead><tr><th style="width:30%">Program or source</th><th style="width:22%">Covers</th><th style="width:16%">Amount ($)</th><th>Source / note</th><th></th></tr></thead>
+      <tbody id="subRows"></tbody>
+    </table>
+  </section>
+
+  <!-- FLAGS -->
+  <section class="card">
+    <h2>Things a family could miss</h2>
+    <ul class="flags" id="flags"></ul>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="card">
+    <div class="flex"><h2>Plain-language summary</h2>
+      <div class="toggle"><button data-lang="en" class="on">English</button><button data-lang="es">Español</button></div></div>
+    <div class="summary" id="summary"></div>
+    <p class="note">This explains numbers. It is not legal or lending advice. Next step: review with a HUD-approved housing counselor.</p>
+    <div class="flex" style="margin-top:12px"><button class="btn" id="resetBtn">Reset to Herrera sample</button><a class="btn" href="index.html">← Back to Gap Ledger</a></div>
+  </section>
+</main>
+<footer>Fictional sample data only (Claude Impact Lab). Arithmetic runs in this page; no data leaves the browser.</footer>
+
+<script>
+// ---------- Herrera sample (every value comes from sample-docs) ----------
+const HERRERA = {
+  luisRate: 26.00, luisYTD: 49870.40, luisYTDDate: "2026-10-30", luisMethod: "base",
+  mariaCheck: 897.00, mariaYTD: 19402.50, mariaStart: "2026-03-02", mariaMethod: "ytd",
+  dAuto: 412, dCard: 125, dPayLater: 297.50,
+  savings: 8420.00, checking: 6018.84, useChecking: "no",
+  pct: 30,
+  costMode: "price", price: 585000, land: 0, soft: 0, hard: 0,
+  rate: 6.5, maxRate: 11.5, downPct: 3, pmi: 260, escrow: 711, hoa: 425,
+  lePayment: 4558, cashToClose: 36190,
+  subs: [],
+};
+// Loan amount on doc 04, used to turn the PMI and escrow dollars into ratios.
+const LE_PRICE = 585000;
+
+const $ = id => document.getElementById(id);
+const FIELDS = Object.keys(HERRERA).filter(k => k !== "subs");
+let subs = [];
+let lang = "en";
+
+const money = (x, cents = false) => (x < 0 ? "−" : "") + "$" + Math.abs(x).toLocaleString("en-US",
+  { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 });
+const pct = x => (x * 100).toFixed(0) + "%";
+const num = id => parseFloat($(id).value) || 0;
+const days = (a, b) => (new Date(b) - new Date(a)) / 86400000;
+const pmt = (loan, annualRate, months) => {
+  const r = annualRate / 100 / 12;
+  return r === 0 ? loan / months : loan * r / (1 - Math.pow(1 + r, -months));
+};
+const balanceAfter = (loan, annualRate, months, paid) => {
+  const r = annualRate / 100 / 12, p = pmt(loan, annualRate, months);
+  return loan * Math.pow(1 + r, paid) - p * (Math.pow(1 + r, paid) - 1) / r;
+};
+
+function load(data) {
+  FIELDS.forEach(k => { $(k).value = data[k]; });
+  subs = data.subs.map(s => ({ ...s }));
+  renderSubs();
+  calc();
+}
+
+function renderSubs() {
+  const tb = $("subRows");
+  tb.innerHTML = "";
+  subs.forEach((s, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${esc(s.name)}" data-k="name" placeholder="e.g. Down payment assistance"></td>
+      <td><select data-k="type">
+        <option value="price"${s.type === "price" ? " selected" : ""}>Lowers price / loan</option>
+        <option value="cash"${s.type === "cash" ? " selected" : ""}>Cash to close</option></select></td>
+      <td><input type="number" step="1000" value="${s.amount}" data-k="amount"></td>
+      <td><input value="${esc(s.source)}" data-k="source" placeholder="Where this number came from"></td>
+      <td><button class="x" title="Remove">×</button></td>`;
+    tr.querySelectorAll("[data-k]").forEach(el => el.addEventListener("input", () => {
+      s[el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
+    }));
+    tr.querySelector(".x").onclick = () => { subs.splice(i, 1); renderSubs(); calc(); };
+    tb.appendChild(tr);
+  });
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function calc() {
+  // ---- income ----
+  const luisBase = num("luisRate") * 2080 / 12;
+  const luisDays = days(new Date($("luisYTDDate").value).getFullYear() + "-01-01", $("luisYTDDate").value) + 1;
+  const luisYtdMo = num("luisYTD") / luisDays * 365 / 12;
+  const luis = $("luisMethod").value === "base" ? luisBase : luisYtdMo;
+  $("luisF").textContent = $("luisMethod").value === "base"
+    ? `$${num("luisRate")} × 2,080 hrs ÷ 12`
+    : `$${num("luisYTD").toLocaleString()} ÷ ${luisDays} days × 365 ÷ 12`;
+  $("luisMo").textContent = money(luis, true);
+
+  const mariaDays = days($("mariaStart").value, $("luisYTDDate").value) + 1;
+  const mariaYtdMo = num("mariaYTD") / mariaDays * 365 / 12;
+  const mariaCheckMo = num("mariaCheck") * 26 / 12;
+  const maria = $("mariaMethod").value === "ytd" ? mariaYtdMo : mariaCheckMo;
+  $("mariaF").textContent = $("mariaMethod").value === "ytd"
+    ? `$${num("mariaYTD").toLocaleString()} ÷ ${mariaDays} days × 365 ÷ 12`
+    : `$${num("mariaCheck")} × 26 checks ÷ 12`;
+  $("mariaMo").textContent = money(maria, true);
+
+  const income = luis + maria;
+  const debts = num("dAuto") + num("dCard") + num("dPayLater");
+  const share = num("pct") / 100;
+  $("pctLabel").textContent = num("pct") + "%";
+  const budget = income * share;
+
+  // ---- home ----
+  const build = $("costMode").value === "build";
+  $("priceBox").hidden = build; $("buildBox").hidden = !build;
+  const cost = build ? num("land") + num("soft") + num("hard") : num("price");
+  const down = num("downPct") / 100, rate = num("rate");
+  // Per-dollar ratios taken from the Loan Estimate itself
+  const leLoan = LE_PRICE * (1 - down);
+  const pmiRatio = num("pmi") / leLoan;          // monthly PMI per $ of loan
+  const escrowRatio = num("escrow") / LE_PRICE;  // monthly escrow per $ of price
+  const monthly = p => {
+    const loan = p * (1 - down);
+    return { pi: pmt(loan, rate, 360), pmi: loan * pmiRatio, escrow: p * escrowRatio, hoa: num("hoa") };
+  };
+  const m = monthly(cost);
+  const total = m.pi + m.pmi + m.escrow + m.hoa;
+  $("oPI").textContent = money(m.pi, true);
+  $("oOther").textContent = money(m.pmi + m.escrow + m.hoa);
+  $("oTotal").textContent = money(total);
+  $("oShare").textContent = income ? pct(total / income) : "–";
+  $("oShareDebt").textContent = income ? pct((total + debts) / income) : "–";
+
+  // Price the budget supports: total(p) = a·p + HOA, so p = (budget − HOA) / a
+  const a = (1 - down) * (pmt(1, rate, 360) + pmiRatio) + escrowRatio;
+  const affordPrice = Math.max(0, (budget - num("hoa")) / a);
+
+  // ---- subsidies ----
+  const priceSubs = subs.filter(s => s.type === "price" && s.amount > 0);
+  const cashSubs = subs.filter(s => s.type === "cash" && s.amount > 0);
+  const priceHelp = priceSubs.reduce((t, s) => t + s.amount, 0);
+  const cashHelp = cashSubs.reduce((t, s) => t + s.amount, 0);
+  const gap = Math.max(0, cost - affordPrice - priceHelp);
+
+  // Cash to close: scale doc 04 value when price/cost changes
+  const cashNeeded = num("cashToClose") * (cost / LE_PRICE);
+  const cashHave = num("savings") + ($("useChecking").value === "yes" ? num("checking") : 0);
+  const cashGap = Math.max(0, cashNeeded - cashHave - cashHelp);
+
+  // ---- top stats ----
+  $("sCost").textContent = money(cost);
+  $("sCostNote").textContent = `${money(total)}/month all-in`;
+  $("sAfford").textContent = money(Math.min(affordPrice, cost));
+  $("sAffordNote").textContent = `${num("pct")}% × ${money(income)} income = ${money(budget)}/month`;
+  $("sGap").textContent = money(gap);
+  $("sGapNote").textContent = priceHelp ? `after ${money(priceHelp)} from programs` : "before any programs";
+
+  drawBar("bar", "legend", cost, [
+    { cls: "seg-family", label: "Family pays", v: Math.min(affordPrice, cost) },
+    ...priceSubs.map(s => ({ cls: "seg-sub", label: s.name || "Program", v: s.amount })),
+    { cls: "seg-gap", label: "Gap", v: gap },
+  ]);
+  drawBar("cashBar", "cashLegend", Math.max(cashNeeded, cashHave + cashHelp), [
+    { cls: "seg-family", label: "Family cash", v: Math.min(cashHave, cashNeeded) },
+    ...cashSubs.map(s => ({ cls: "seg-sub", label: s.name || "Program", v: s.amount })),
+    { cls: "seg-gap", label: "Cash gap", v: cashGap },
+  ], `Needs ${money(cashNeeded)} to close${build ? " (scaled from doc 04)" : " (doc 04)"}`);
+
+  // ---- flags ----
+  const leTotal = num("lePayment");
+  const loan = cost * (1 - down);
+  const bal7 = balanceAfter(loan, rate, 360, 84);
+  const piY8 = pmt(bal7, num("maxRate"), 276);
+  const flags = [];
+  if (!build && Math.round(total) - leTotal >= 1)
+    flags.push(["high", `The Loan Estimate says ${money(leTotal)}/month, but HOA dues (${money(num("hoa"))}) are not included. Real cost: ${money(total)}/month.`, "Doc 04 + calc"]);
+  if (num("maxRate") > rate)
+    flags.push(["high", `Adjustable rate. If it rises to ${num("maxRate")}% by year 8, principal & interest goes from ${money(m.pi)} to about ${money(piY8)}/month.`, "Doc 04 + calc"]);
+  if (num("dPayLater") > 0)
+    flags.push(["high", `Pay-later plans cost ${money(num("dPayLater"), true)}/month. They often don't show on a credit report, but it is real money out.`, "Doc 03"]);
+  flags.push(["high", `A $3,000 cash deposit on 10/09 has no source. Lenders usually ask for a letter and proof.`, "Doc 03"]);
+  flags.push(["", `An overdraft and $35 fee on 10/06 show money runs short early in the month.`, "Doc 03"]);
+  if (mariaDays < 365)
+    flags.push(["", `Maria started this job ${Math.round(mariaDays / 30.4)} months ago. Many lenders want 2 years of work history or an explanation.`, "Doc 02"]);
+  if (Math.abs(mariaCheckMo - mariaYtdMo) / mariaYtdMo > 0.1)
+    flags.push(["", `Maria's latest check (${money(num("mariaCheck"), true)}) is lower than her average. Her deposits fell from $802.11 to $744.62 to $669.11 in October.`, "Doc 02 + 03"]);
+  if (luisYtdMo > luisBase * 1.05)
+    flags.push(["", `Luis earns overtime, but it changes. Lenders usually average it instead of counting one check.`, "Doc 01"]);
+  if (!build)
+    flags.push(["", `Prepayment penalty up to $11,349 in the first 3 years, and the rate is not locked.`, "Doc 04"]);
+  $("flags").innerHTML = flags.map(([c, t, s]) => `<li class="${c}">${esc(t)}<span class="src">${s}</span></li>`).join("");
+
+  // ---- summary ----
+  const S = { income, budget, total, cost, affordPrice: Math.min(affordPrice, cost), gap, priceHelp, cashNeeded, cashHave, cashGap, debts };
+  $("summary").innerHTML = (lang === "es" ? summaryES : summaryEN)(S);
+}
+
+function drawBar(barId, legendId, whole, segs, extra) {
+  const segsOn = segs.filter(s => s.v > 0.5);
+  $(barId).innerHTML = segsOn.map(s =>
+    `<div class="${s.cls}" style="flex-basis:${(s.v / whole * 100).toFixed(2)}%" title="${esc(s.label)}: ${money(s.v)}">${s.v / whole > .12 ? esc(s.label) + " " + money(s.v) : ""}</div>`).join("");
+  const colors = { "seg-family": "var(--green)", "seg-sub": "var(--blue)", "seg-gap": "var(--red)" };
+  $(legendId).innerHTML = segsOn.map(s => `<span><i style="background:${colors[s.cls]}"></i>${esc(s.label)}: ${money(s.v)}</span>`).join("")
+    + (extra ? `<span>${esc(extra)}</span>` : "");
+}
+
+const summaryEN = s => `
+  <p>Your family earns about <b>${money(s.income)}</b> a month before taxes. A safe housing cost is about <b>${money(s.budget)}</b> a month.</p>
+  <p>This home really costs <b>${money(s.total)}</b> a month, with HOA dues included. That is <b>${pct(s.total / s.income)}</b> of your income.</p>
+  <p>Your budget fits a home of about <b>${money(s.affordPrice)}</b>. This one costs <b>${money(s.cost)}</b>.
+     ${s.gap > 0 ? `The gap is <b>${money(s.gap)}</b>${s.priceHelp ? " after the programs listed" : ""}.` : "Programs close the full gap."}</p>
+  <p>You need <b>${money(s.cashNeeded)}</b> in cash to close. You have <b>${money(s.cashHave)}</b> set aside.
+     ${s.cashGap > 0 ? `You are short <b>${money(s.cashGap)}</b>.` : "That is covered."}</p>
+  <p><b>Next step:</b> bring this page to a housing counselor and ask which programs can close the gap.</p>`;
+
+const summaryES = s => `
+  <p>Su familia gana unos <b>${money(s.income)}</b> al mes antes de impuestos. Un costo de vivienda seguro es de unos <b>${money(s.budget)}</b> al mes.</p>
+  <p>Esta casa cuesta en realidad <b>${money(s.total)}</b> al mes, incluyendo la cuota de HOA. Eso es el <b>${pct(s.total / s.income)}</b> de sus ingresos.</p>
+  <p>Su presupuesto alcanza para una casa de unos <b>${money(s.affordPrice)}</b>. Esta cuesta <b>${money(s.cost)}</b>.
+     ${s.gap > 0 ? `La diferencia es de <b>${money(s.gap)}</b>${s.priceHelp ? " después de los programas indicados" : ""}.` : "Los programas cubren toda la diferencia."}</p>
+  <p>Necesita <b>${money(s.cashNeeded)}</b> en efectivo para cerrar la compra. Tiene <b>${money(s.cashHave)}</b> ahorrados.
+     ${s.cashGap > 0 ? `Le faltan <b>${money(s.cashGap)}</b>.` : "Eso está cubierto."}</p>
+  <p><b>Siguiente paso:</b> lleve esta página a un consejero de vivienda y pregunte qué programas pueden cubrir la diferencia.</p>`;
+
+// ---------- wiring ----------
+FIELDS.forEach(k => $(k).addEventListener("input", calc));
+$("addSub").onclick = () => { subs.push({ name: "", type: "price", amount: 0, source: "" }); renderSubs(); };
+$("resetBtn").onclick = () => load(HERRERA);
+document.querySelectorAll(".toggle button").forEach(b => b.onclick = () => {
+  lang = b.dataset.lang;
+  document.querySelectorAll(".toggle button").forEach(x => x.classList.toggle("on", x === b));
+  calc();
+});
+load(HERRERA);
+</script>
+</body>
+</html>

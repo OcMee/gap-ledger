@@ -1,0 +1,1151 @@
+<meta charset="utf-8">
+<title>Gap Ledger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a project ledger. Summary strip on top, then input columns left, results right, then rate history full width. */
+  :root {
+    /* OCMEE brand: orange accent, warm paper, soft charcoal ink (softer than the brand #1A1A1A), Montserrat + IBM Plex Mono. */
+    --bg: #faf8f4; --surface: #fffdf9; --ink: #2b2925; --muted: #66635c; --line: #e7e2d7;
+    --accent: #9e5404; --accent-soft: #fdeedd; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #2f6d8c; --fund-soft: #e3eef4;
+    --good: #2f7a4f; --good-soft: #e5f1e8; --bad: #b3362b; --bad-soft: #f8e4e1; --warn: #8a6a00; --warn-soft: #f7efd2;
+    --font-ui: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #1c1e22; --surface: #24272d; --ink: #efece6; --muted: #a9a69e; --line: #3a3e46;
+    --accent: #ffb15e; --accent-soft: #3a2b18; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #7fb6d6; --fund-soft: #1f3340;
+    --good: #6cc392; --good-soft: #1d3327; --bad: #f08a7e; --bad-soft: #3d2320; --warn: #e3c35a; --warn-soft: #3a3116; color-scheme: dark;} }
+  :root[data-theme="dark"] {
+    --bg: #1c1e22; --surface: #24272d; --ink: #efece6; --muted: #a9a69e; --line: #3a3e46;
+    --accent: #ffb15e; --accent-soft: #3a2b18; --brand: #ff8710; --on-brand: #1a1205;
+    --fund: #7fb6d6; --fund-soft: #1f3340;
+    --good: #6cc392; --good-soft: #1d3327; --bad: #f08a7e; --bad-soft: #3d2320; --warn: #e3c35a; --warn-soft: #3a3116; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-ui); margin: 0; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  h2 { font-size: 17px; font-weight: 700; margin: 0; }
+  h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 16px 0 6px; }
+  p { margin: 0; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .lede { color: var(--muted); max-width: 70ch; margin-top: 6px; }
+  .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+  a { color: var(--accent); }
+  .muted { color: var(--muted); } .small { font-size: 12.5px; }
+
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .links { display: flex; gap: 12px; font-size: 13px; }
+
+  /* summary strip */
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .strip > div { background: var(--surface); padding: 14px 16px; min-width: 0; }
+  .strip .k { font-size: 12.5px; color: var(--muted); }
+  .strip .v { font-family: var(--font-num); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .strip .f { font-size: 12px; color: var(--muted); font-family: var(--font-num); overflow-wrap: anywhere; }
+  .v.good { color: var(--good); } .v.bad { color: var(--bad); }
+  @media (max-width: 900px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .strip { grid-template-columns: 1fr; } }
+
+  .barbox { margin: 14px 0 4px; }
+  .bar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; background: var(--bad-soft); }
+  .bar > div { min-width: 0; display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 600;
+    color: var(--surface); white-space: nowrap; overflow: hidden; transition: flex-basis .35s ease; }
+  .seg-fam { background: var(--good); } .seg-ok { background: var(--fund); }
+  .seg-pend { background: repeating-linear-gradient(135deg, var(--fund) 0 6px, transparent 6px 10px); color: var(--ink) !important; }
+  .seg-gap { background: var(--bad); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; margin-top: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  .panel > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+
+  .field { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 4px 10px; align-items: center; padding: 5px 0;
+    border-bottom: 1px solid var(--line); }
+  .field:last-child { border-bottom: 0; }
+  .field label { font-size: 14px; }
+  .field .why { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
+  input, select { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 8px; width: 100%; min-width: 0; }
+  input[type=number] { font-family: var(--font-num); text-align: right; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { font: inherit; font-size: 14px; cursor: pointer; border-radius: 6px; padding: 7px 12px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 5px 10px; font-size: 13px; background: var(--surface); }
+  .seg button[aria-pressed=true] { background: var(--ink); color: var(--surface); }
+
+  .pill { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .pill.ok { background: var(--good-soft); color: var(--good); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.info { background: var(--accent-soft); color: var(--accent); }
+
+  .calc { font-family: var(--font-num); font-size: 12.5px; background: var(--bg); border-radius: 6px; padding: 10px 12px;
+    line-height: 1.7; overflow-wrap: anywhere; }
+  .field:has(select) { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
+  @media (max-width: 560px) { .field:has(select) { grid-template-columns: 1fr; } }
+  table.stack { min-width: 720px; }
+  .stack td:nth-child(1) { width: 26%; } .stack td:nth-child(3) { width: 17%; } .stack td:nth-child(4) { width: 13%; }
+  .calc b { font-weight: 500; color: var(--ink); }
+  .alert { border-radius: 6px; padding: 8px 10px; font-size: 13px; margin-top: 8px; }
+  .alert.warn { background: var(--warn-soft); color: var(--ink); border-left: 3px solid var(--warn); }
+  .alert.bad { background: var(--bad-soft); color: var(--ink); border-left: 3px solid var(--bad); }
+  .alert.ok { background: var(--good-soft); color: var(--ink); border-left: 3px solid var(--good); }
+
+  .tablebox { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { text-align: left; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+    padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  td.r, th.r { text-align: right; } tr.now td { background: var(--accent-soft); font-weight: 600; }
+  .stack td input, .stack td select { padding: 5px 6px; }
+  .x { border: 0; background: none; color: var(--muted); font-size: 18px; padding: 2px 6px; }
+
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { fill: var(--muted); font-family: var(--font-num); font-size: 11px; }
+  .chart .grid line { stroke: var(--line); }
+  .chart .rate { fill: none; stroke: var(--fund); stroke-width: 1.8; }
+  .chart .gapl { fill: none; stroke: var(--bad); stroke-width: 1.8; }
+  .chart .area { fill: var(--fund-soft); }
+  .chart .areab { fill: var(--bad-soft); }
+  .chart .hair { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart .dot { fill: var(--surface); stroke-width: 2; }
+  .tip { font-family: var(--font-num); font-size: 12.5px; min-height: 1.5em; }
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+  .kpis > div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+  .kpis .k { font-size: 12px; color: var(--muted); } .kpis .v { font-family: var(--font-num); font-size: 18px; }
+  @media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .donor { font-size: 17px; line-height: 1.6; max-width: 62ch; }
+  .donor b { font-family: var(--font-num); font-weight: 500; }
+  .drop { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 22px 16px; margin-top: 12px;
+    border: 2px dashed var(--line); border-radius: 10px; cursor: pointer; background: var(--bg); }
+  .drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .applyrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .doclist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; margin-top: 12px; }
+  .doc { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+  .doc > header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  #docViewer { width: min(960px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--surface); color: var(--ink); }
+  #docViewer::backdrop { background: rgba(10, 20, 24, .6); }
+  .viewerbar { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .viewerbody { padding: 14px; display: grid; gap: 14px; justify-items: center; background: var(--bg); }
+  .docpage { width: 100%; max-width: 900px; height: auto; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); background: #fff; }
+  .dochead { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .doc .x:hover { color: var(--bad); }
+  .docname { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .docsum { font-size: 14px; }
+  table.facts td { font-size: 13px; padding: 4px 6px; }
+  .quote { color: var(--muted); font-size: 12px; font-style: italic; }
+  .docflags { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .docflags li { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .docflags li.high { background: var(--bad-soft); border-left-color: var(--bad); }
+  .notconf { font-size: 14px; }
+  @keyframes flashseg { 0%, 100% { box-shadow: none; filter: none; } 30%, 70% { box-shadow: inset 0 0 0 3px var(--brand); filter: brightness(1.15); } }
+  .bar > div.flash { animation: flashseg 1s ease 3; }
+  @media (prefers-reduced-motion: reduce) { .bar > div.flash { animation: none; box-shadow: inset 0 0 0 3px var(--brand); } }
+  .linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
+  button:disabled { opacity: .55; cursor: default; }
+  .plainbox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--accent-soft); border-left: 4px solid var(--brand); display: grid; gap: 4px; max-width: 90ch; }
+  .plainbox p { margin: 0; font-size: 15.5px; line-height: 1.55; }
+  .links { align-items: center; flex-wrap: wrap; }
+  .navbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--accent); border-radius: 6px;
+    color: var(--accent); background: var(--surface); font-weight: 600; font-size: 13.5px; text-decoration: none; }
+  .navbtn:hover { background: var(--accent-soft); }
+  .navbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .steps { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+  .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .step .stepbody { display: grid; gap: 4px; min-width: 0; }
+  .step .stepbody p { margin: 0; }
+  .stepnum { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font: 600 14px var(--font-num); }
+  .step.done { background: var(--good-soft); } .step.done .stepnum { background: var(--good); }
+  #planPartners tr.now td { background: var(--accent-soft); }
+  .invgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
+  @media (max-width: 860px) { .invgrid { grid-template-columns: 1fr; } }
+  .invcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; background: var(--surface); }
+  .invcard .field { grid-template-columns: 1fr; }
+  .invimg { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: var(--bg); }
+  .invh { margin: 4px 0 0; text-transform: none; letter-spacing: 0; color: var(--ink); font-size: 18px; }
+  .roles { display: grid; gap: 6px; }
+  .role { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  .role input { width: auto; margin-top: 3px; accent-color: var(--brand); }
+  .role:has(input:checked) { border-color: var(--brand); background: var(--accent-soft); }
+  .brandbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .logo { height: 26px; width: auto; max-width: 100%; display: block; }
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-light { display: none; } :root:not([data-theme="light"]) .logo-dark { display: block; } }
+  :root[data-theme="dark"] .logo-light { display: none; } :root[data-theme="dark"] .logo-dark { display: block; }
+  :root[data-theme="light"] .logo-light { display: block; } :root[data-theme="light"] .logo-dark { display: none; }
+  .brandsep { width: 2px; height: 26px; background: var(--brand); border-radius: 2px; }
+  .program { font-weight: 700; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+  @media (max-width: 480px) { .logo { height: 20px; } .brandsep { height: 20px; } .program { font-size: 13px; } }
+  .optgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px; }
+  @media (max-width: 900px) { .optgrid { grid-template-columns: 1fr; } }
+  .optcard { border: 1px solid var(--line); border-top: 4px solid var(--brand); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; background: var(--surface); }
+  .opthead h3 { margin: 0; font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .optline { margin: 0; font-size: 14.5px; }
+  .optres { margin: 0; padding: 8px 10px; border-radius: 6px; background: var(--accent-soft); font-weight: 600; font-size: 14.5px; }
+  .optres.good { background: var(--good-soft); color: var(--good); } .optres.bad { background: var(--bad-soft); color: var(--bad); }
+  .optcard .field { grid-template-columns: minmax(0, 1fr) 150px; }
+  .optcard .field:has(select) { grid-template-columns: 1fr; }
+  #mapSvg { --ocean: #dbe8ee; --wl: #c9dde6; --wl2: #b9d2de; --land: #fbf6ec; --land2: #efe7d8; --bord: #b5a88f; --grat: rgba(60, 80, 90, .14); --lab: #7d7262; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #mapSvg { --ocean: #1a2a32; --wl: #213640; --wl2: #27404b; --land: #2c2f35; --land2: #25282d; --bord: #4d4f55; --grat: rgba(200, 220, 230, .10); --lab: #a39b8e; } }
+  :root[data-theme="dark"] #mapSvg { --ocean: #1a2a32; --wl: #213640; --wl2: #27404b; --land: #2c2f35; --land2: #25282d; --bord: #4d4f55; --grat: rgba(200, 220, 230, .10); --lab: #a39b8e; }
+  #mapSvg .ocean { fill: var(--ocean); }
+  #mapSvg .wl { fill: none; stroke-linejoin: round; }
+  #mapSvg .wl1 { stroke: var(--wl); stroke-width: 34; } #mapSvg .wl2 { stroke: var(--ocean); stroke-width: 24; } #mapSvg .wl3 { stroke: var(--wl2); stroke-width: 12; }
+  #mapSvg .nb { fill: var(--land2); } #mapSvg .oc { fill: var(--land); }
+  #mapSvg .border { fill: none; stroke: var(--bord); stroke-width: 1; stroke-dasharray: 5 3; }
+  #mapSvg .ocline { fill: none; stroke: var(--brand); stroke-width: 2.2; stroke-opacity: .75; }
+  #mapSvg .grat { stroke: var(--grat); stroke-width: 1; }
+  #mapSvg .gratl { fill: var(--lab); font: 10px var(--font-num); }
+  #mapSvg .rlabel { fill: var(--lab); font: italic 600 12px var(--font-ui); letter-spacing: .22em; }
+  #mapSvg .oclabel { fill: var(--accent); font: 700 22px var(--font-ui); letter-spacing: .5em; opacity: .55; }
+  #mapSvg .sealabel { fill: var(--fund); font: italic 500 20px var(--font-ui); letter-spacing: .3em; }
+  #mapSvg .town { fill: var(--lab); } #mapSvg .townl { fill: var(--lab); font: 600 10px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
+  #mapSvg .cring { fill: var(--surface); stroke: var(--bord); stroke-width: 1; fill-opacity: .7; } #mapSvg .cring2 { fill: none; stroke: var(--bord); stroke-width: .8; stroke-dasharray: 2 3; }
+  #mapSvg .cneedle { fill: var(--lab); } #mapSvg .cnorth { fill: var(--brand); } #mapSvg .cN { fill: var(--ink); font: 700 12px var(--font-ui); }
+  #mapSvg .sb1 { fill: var(--ink); } #mapSvg .sb2 { fill: var(--surface); stroke: var(--ink); stroke-width: 1; }
+  #mapSvg .scalel { fill: var(--ink); font: 10px var(--font-num); }
+  #mapSvg .insetbox { fill: var(--surface); stroke: var(--bord); stroke-width: 1; fill-opacity: .92; }
+  #mapSvg .insetl { fill: var(--lab); font: 700 9.5px var(--font-ui); letter-spacing: .18em; }
+  #mapSvg .insetca { fill: var(--bord); fill-opacity: .55; stroke: none; } #mapSvg .insetoc { fill: var(--brand); }
+  #mapSvg .legl { fill: var(--ink); font: 11px var(--font-ui); } #mapSvg .muted2 { fill: var(--lab); }
+  #mapSvg .lg { stroke: var(--surface); stroke-width: 1.5; } #mapSvg .lg.ok { fill: var(--good); } #mapSvg .lg.warn { fill: var(--warn); } #mapSvg .lg.bad { fill: var(--bad); }
+  #mapSvg .frame { fill: none; stroke: var(--bord); stroke-width: 1.5; } #mapSvg .frame2 { fill: none; stroke: var(--bord); stroke-width: .6; }
+  #mapSvg .pin circle { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+  .mapside { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .progpanel { padding: 12px 14px; }
+  #progSvg { width: 100%; height: auto; display: block; }
+  #progSvg .pl { stroke-width: 1.4; } #progSvg .pl.fit { stroke: var(--brand); } #progSvg .pl.check { stroke: var(--brand); stroke-dasharray: 4 3; stroke-opacity: .7; } #progSvg .pl.no { stroke: var(--line); }
+  #progSvg .phub { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+  #progSvg .phubl { fill: var(--ink); font: 700 15px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+  #progSvg .pn { cursor: pointer; } #progSvg .pn text { font: 600 13.5px var(--font-ui); fill: var(--ink); } #progSvg .pn .hit { fill: transparent; stroke: none; }
+  #progSvg .pn.fit circle { fill: var(--brand); stroke: var(--surface); stroke-width: 2; }
+  #progSvg .pn.check circle { fill: var(--surface); stroke: var(--brand); stroke-width: 2; stroke-dasharray: 2.5 2; }
+  #progSvg .pn.no circle { fill: var(--line); } #progSvg .pn.no text { fill: var(--muted); font-weight: 500; }
+  #progSvg .pn.sel circle { stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: none; }
+  #progSvg .pn:focus { outline: none; } #progSvg .pn:focus circle { stroke: var(--ink); stroke-width: 2.5; }
+  #progSvg .pcenter-halo { fill: var(--brand); fill-opacity: .18; } #progSvg .pcenter { fill: var(--ink); stroke: var(--brand); stroke-width: 3; }
+  #progSvg .pc1 { fill: var(--surface); font: 700 14px var(--font-ui); } #progSvg .pc2 { fill: var(--brand); font: 700 17px var(--font-num); }
+  .proglegend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+  .pk { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .pk.fit { background: var(--brand); } .pk.check { border: 2px dotted var(--brand); width: 8px; height: 8px; } .pk.no { background: var(--line); }
+  #progDialog { width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+  #progDialog::backdrop { background: rgba(10, 20, 24, .6); }
+  .progdialogbody { padding: 14px 18px 18px; }
+  .progdialogbody .progpanel { border: 0; padding: 0; }
+  .progdialogbody #progSvg { max-height: calc(100vh - 230px); }
+  .progdialogbody #progBig { display: none; }
+  .mapside #progSvg { cursor: zoom-in; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .tabs a { padding: 8px 14px; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom: 3px solid var(--brand); }
+  .tabs a:hover { color: var(--ink); }
+  .tabs .count { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+  .mapgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; margin-top: 12px; }
+  @media (max-width: 900px) { .mapgrid { grid-template-columns: 1fr; } }
+  .mapbox { min-width: 0; }
+  #mapSvg { width: 100%; max-height: 760px; height: auto; display: block; border: 1px solid var(--line); border-radius: 10px; }
+  #mapSvg .pin { cursor: pointer; }
+  #mapSvg .pin circle { stroke: var(--surface); stroke-width: 2; }
+  #mapSvg .pin.ok circle { fill: var(--good); } #mapSvg .pin.warn circle { fill: var(--warn); } #mapSvg .pin.bad circle { fill: var(--bad); }
+  #mapSvg .pin.sel circle { stroke: var(--ink); stroke-width: 3; }
+  #mapSvg .pin:focus { outline: none; } #mapSvg .pin:focus circle { stroke: var(--ink); stroke-width: 3; }
+  #mapSvg .pinlabel, #mapSvg .pinn { pointer-events: none; }
+  #mapSvg .pinn { fill: var(--surface); font: 600 12px var(--font-num); }
+  #mapSvg .pinl { fill: var(--ink); font: 600 13px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  #mapSvg .pins { fill: var(--muted); font: 11.5px var(--font-num); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .flexrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #histTable { min-width: 680px; }
+  #histTable td { font-size: 13.5px; }
+  #histTable .acts { white-space: nowrap; display: flex; gap: 10px; }
+  #histTable .sum { max-width: 46ch; }
+  footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
+  @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+
+  .zipbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 10px 0 2px; padding: 10px 12px; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 8px; background: var(--accent-soft); }
+  .zipbar input { width: 110px; font-family: var(--font-num); }
+  .zipbar select { width: auto; }
+  .zipbar #mapZipNote { flex-basis: 100%; }
+  #mapSvg .ziparea { fill: var(--brand); fill-opacity: .10; stroke: var(--brand); stroke-width: 2; stroke-dasharray: 6 4; }
+  #mapSvg .zipdot { fill: var(--ink); stroke: var(--surface); stroke-width: 2.5; }
+  #mapSvg .zipl { fill: var(--ink); font: 700 13px var(--font-ui); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; pointer-events: none; }
+  #mapSvg .pin.far { opacity: .35; }
+  .mapframe { position: relative; }
+  .mapzoom { position: absolute; top: 120px; left: 10px; display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .mapzoom button { width: 36px; height: 34px; padding: 0; border: 0; border-radius: 0; border-bottom: 1px solid var(--line); font-size: 18px; font-weight: 600; line-height: 1; background: var(--surface); color: var(--ink); }
+  .mapzoom button:last-child { border-bottom: 0; font-size: 16px; }
+  .mapzoom button:hover:not(:disabled) { background: var(--accent-soft); }
+  #mapSvg { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  #mapSvg.dragging { cursor: grabbing; }
+  #mapSvg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* PDF report row */
+  .reportrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0 4px; }
+  /* Help chat */
+  #chatFab { position: fixed; right: 20px; bottom: 20px; z-index: 50; border-radius: 999px; padding: 12px 18px; font-weight: 600;
+    background: var(--brand, #FF8710); color: #2b2925; border: 0; box-shadow: 0 6px 20px rgba(0,0,0,.18); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  #chatFab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #chatPanel { position: fixed; right: 20px; bottom: 76px; z-index: 50; width: min(380px, calc(100vw - 32px)); max-height: min(620px, calc(100vh - 110px));
+    display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.22); overflow: hidden; }
+  #chatPanel[hidden] { display: none !important; }
+  .chathead { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); gap: 8px; }
+  .chattabs { display: flex; gap: 4px; }
+  .chattabs button { border: 0; background: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .chattabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); }
+  .chatpane { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  #chatLog { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 160px; }
+  .msg { max-width: 88%; padding: 8px 11px; border-radius: 12px; white-space: pre-wrap; line-height: 1.4; font-size: 14px; overflow-wrap: anywhere; }
+  .msg.bot { background: var(--bg); border: 1px solid var(--line); align-self: flex-start; }
+  .msg.me { background: var(--brand, #FF8710); color: #2b2925; align-self: flex-end; }
+  .msg.note { background: none; border: 0; color: var(--muted); font-size: 12.5px; padding: 0 4px; }
+  #chatChips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+  .chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chatform { display: flex; gap: 6px; padding: 8px 12px 4px; border-top: 1px solid var(--line); }
+  .chatform textarea { flex: 1; resize: none; height: 40px; font: inherit; font-size: 14px; }
+  .chatfoot { padding: 0 12px 10px; }
+  #chatPane-help { padding: 12px; overflow-y: auto; gap: 10px; }
+  .supitem { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; flex-shrink: 0; }
+  .supitem > b { display: block; margin-bottom: 2px; }
+  @media print { #chatFab, #chatPanel { display: none !important; } }
+
+  /* ===== OCMEE polish layer: brand masthead, sticky tabs, ledger equation, calmer panels, brand footer ===== */
+  :root { --shadow: 0 1px 2px rgba(43, 41, 37, .05), 0 4px 14px rgba(43, 41, 37, .05); --r: 12px; --glass: rgba(250, 248, 244, .88); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --shadow: 0 1px 2px rgba(0, 0, 0, .3); --glass: rgba(28, 30, 34, .88); } }
+  :root[data-theme="dark"] { --shadow: 0 1px 2px rgba(0, 0, 0, .3); --glass: rgba(28, 30, 34, .88); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+  body { border-top: 5px solid var(--brand); }
+  .wrap { padding-block: 0 48px; }
+  .masthead { display: grid; gap: 0; }
+  .brandbar { padding: 18px 0 16px; margin-bottom: 0; border-bottom: 1px solid var(--line); }
+  .brandbar .links { margin-left: auto; }
+  .hero { padding: 30px 0 22px; display: grid; gap: 10px; max-width: 900px; }
+  .hero h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+  .hero .lede { font-size: 16.5px; line-height: 1.6; max-width: 68ch; margin: 0; }
+  .herofacts { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .herofacts li { font-size: 12.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 4px 11px; display: inline-flex; align-items: center; gap: 6px; }
+  .herofacts li b { color: var(--ink); font-weight: 600; }
+  .herofacts .warnfact { background: var(--warn-soft); border-color: transparent; color: var(--warn); font-weight: 600; }
+  .herofacts .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+  /* Sticky tab bar: scrolls sideways on phones instead of wrapping into rows */
+  .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--glass); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 2px; margin: 0 0 20px; padding: 8px 0 0; border-bottom: 1px solid var(--line); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs a { white-space: nowrap; padding: 10px 14px 11px; border-radius: 8px 8px 0 0; }
+  .tabs a:hover { background: var(--accent-soft); }
+  .tabs a[aria-current="page"] { color: var(--ink); border-bottom: 3px solid var(--brand); background: none; }
+  /* Ledger equation: cost minus what the family can pay equals the gap */
+  .strip { gap: 14px; background: none; border: 0; border-radius: 0; overflow: visible; }
+  .strip > div { position: relative; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px 18px; }
+  .strip .k { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; }
+  .strip .v { font-size: 30px; line-height: 1.25; margin-top: 4px; }
+  .strip > div:nth-child(4) { border-color: var(--bad); background: var(--bad-soft); }
+  @media (min-width: 901px) {
+    .strip > div:nth-child(2)::before, .strip > div:nth-child(3)::before { position: absolute; left: -21px; top: 50%; transform: translateY(-50%); z-index: 1;
+      width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--surface); font: 600 17px/1 var(--font-num); }
+    .strip > div:nth-child(2)::before { content: "\2212"; }
+    .strip > div:nth-child(3)::before { content: "="; background: var(--brand); color: var(--on-brand); }
+  }
+  .bar { height: 40px; border-radius: 8px; }
+  .barbox { margin: 16px 0 6px; }
+  .plainbox { border-radius: 0 var(--r) var(--r) 0; padding: 14px 18px; }
+  /* Panels */
+  .panel { border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
+  .panel > header { padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 18px; letter-spacing: -.005em; text-wrap: balance; }
+  .grid, .col { gap: 18px; }
+  .optcard, .invcard { border-radius: var(--r); box-shadow: var(--shadow); }
+  button, .navbtn { border-radius: 8px; transition: background-color .15s, filter .15s, border-color .15s; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.06); }
+  button:not(.primary):not(.linkbtn):not(.x):hover:not(:disabled) { border-color: var(--accent); }
+  input:focus, select:focus { border-color: var(--accent); }
+  /* Brand footer */
+  .sitefoot { margin-top: 40px; padding-top: 22px; border-top: 3px solid var(--brand); display: grid; gap: 18px; max-width: none; font-size: 13px; }
+  .footbrand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .footbrand .logo { height: 22px; }
+  .footcols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  .footcols b { color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .footcols p { margin: 6px 0 8px; line-height: 1.55; }
+  @media (max-width: 760px) { .footcols { grid-template-columns: 1fr; } .brandbar .links { margin-left: 0; width: 100%; } }
+  @media (max-width: 560px) { .herofacts li { display: inline-block; line-height: 1.45; } .herofacts .dot { display: inline-block; margin-right: 5px; vertical-align: 1px; }
+    .brandsep { display: none; } .brandbar { gap: 8px 14px; } .hero { padding-top: 20px; } .strip .v { font-size: 26px; } }
+  @media (prefers-reduced-motion: reduce) { button, .navbtn { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brandbar">
+      <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
+      <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
+      <span class="brandsep" aria-hidden="true"></span>
+      <span class="program">Affordable Homes Program</span>
+      <div class="links"><label for="langSel" class="small muted">Language</label> <select id="langSel" style="width:auto"></select>
+        <a class="navbtn" href="household.html" title="Opens a separate page that checks one family's documents. Use Back to return.">Household check (Herrera sample) →</a></div>
+    </div>
+    <div class="hero">
+      <div class="eyebrow">Gap Ledger · Orange County · Claude Impact Lab, Lane 03</div>
+      <h1>Does this home pencil, and who closes the gap?</h1>
+      <p class="lede">The price a family can pay is capped by area income. This page works out that cap from the state formula,
+        shows the gap to the cost of building, tracks how the gap moves with mortgage rates, and lines up the sources that close it.</p>
+      <ul class="herofacts" id="heroFacts" aria-label="Data used"></ul>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Views" id="tabsNav">
+    <a href="#calculator" id="tabCalc" aria-current="page">Calculator</a>
+    <a href="#documents" id="tabDocs">Documents</a>
+    <a href="#options" id="tabOpts">Ways to shrink the gap</a>
+    <a href="#plan" id="tabPlan">Action plan</a>
+    <a href="#involved" id="tabInv">Get involved</a>
+    <a href="#map" id="tabMap">Map</a>
+    <a href="#history" id="tabHist">History <span class="count" id="histCount"></span></a>
+  </nav>
+
+  <section id="mapView" hidden aria-labelledby="mapTitle">
+    <div class="panel">
+      <header><h2 id="mapTitle">Projects on the map</h2><span class="pill warn">Sample projects, fictional numbers</span></header>
+      <p class="small muted">Each pin is a sample affordable-ownership project. Pin size shows how many homes; color shows how much of each home's gap is still open after confirmed funding.
+        Gaps use the same formula, income table and mortgage rate as the Calculator.</p>
+      <form class="zipbar" id="mapZipForm" role="search" novalidate aria-label="Search by ZIP code">
+        <label for="mapZip"><b>Find homes near a ZIP code</b></label>
+        <input id="mapZip" inputmode="numeric" autocomplete="postal-code" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 92701" aria-describedby="mapZipNote">
+        <select id="mapRadius" aria-label="Distance"><option value="3">within 3 miles</option><option value="5" selected>within 5 miles</option><option value="10">within 10 miles</option><option value="15">within 15 miles</option><option value="25">within 25 miles</option><option value="35">within 35 miles</option><option value="50">within 50 miles</option></select>
+        <button class="primary" id="mapZipGo">Search</button><button type="button" id="mapZipClear" hidden>Clear</button>
+        <span class="small muted" id="mapZipNote" role="status">Orange County ZIP codes. Shows sample projects nearby and what a family can pay there.</span>
+      </form>
+      <div class="applyrow">
+        <select id="mapFilter" aria-label="Filter by income tier" style="max-width:220px"></select>
+        <select id="mapBeds" aria-label="Filter by bedrooms" style="max-width:160px"><option value="">Any bedrooms</option><option value="1">1 bedroom</option><option value="2">2 bedrooms</option><option value="3">3+ bedrooms</option></select>
+        <span class="legend" style="margin:0"><span><i style="background:var(--good)"></i>Fully funded</span><span><i style="background:var(--warn)"></i>Under 25% open</span><span><i style="background:var(--bad)"></i>25%+ open</span></span>
+      </div>
+      <div class="mapgrid">
+        <div class="mapbox"><div class="mapframe"><svg id="mapSvg" viewBox="0 0 900 600" role="group" tabindex="0" aria-label="Map of Orange County with sample projects. Arrow keys move, plus and minus zoom, 0 resets."></svg>
+          <div class="mapzoom" role="group" aria-label="Map zoom"><button type="button" id="mapZoomIn" aria-label="Zoom in" title="Zoom in">+</button><button type="button" id="mapZoomOut" aria-label="Zoom out" title="Zoom out">−</button><button type="button" id="mapZoomHome" aria-label="Reset view" title="Reset view">⌂</button></div></div>
+          <p class="small muted" style="margin:4px 0 0">Zoom with + and − (or double-click), drag to move. Ctrl + scroll also zooms.</p>
+          <p class="small muted">Atlas view. County boundaries: US Census Bureau (simplified). City positions are approximate city centers; projects are fictional samples.</p></div>
+        <div class="mapside">
+          <div id="mapCard" class="panel"></div>
+          <section class="panel progpanel" aria-labelledby="progTitle">
+            <header><h2 id="progTitle" style="font-size:15px">Program atlas for this family</h2><span class="small muted" id="progCount"></span><button class="linkbtn" id="progBig" aria-label="Enlarge program atlas">Enlarge ⤢</button></header>
+            <svg id="progSvg" viewBox="0 0 700 480" role="group" aria-label="Programs and loan types that may fit this household"></svg>
+            <div class="proglegend small"><span><i class="pk fit"></i>May fit</span><span><i class="pk check"></i>To check</span><span><i class="pk no"></i>Not for now</span></div>
+            <p class="small" id="progWhy" role="status"></p>
+            <p class="small muted" id="progFrom"></p>
+            <p class="small muted">A first look, not an eligibility decision. Programs set their own rules, limits and funding rounds.</p>
+          </section>
+        </div>
+      </div>
+      <h3>All projects</h3>
+      <p class="small" id="mapTotals"></p>
+      <div class="tablebox"><table style="min-width:560px">
+        <thead><tr><th>Project</th><th class="r">Homes</th><th>Size and buyers</th><th class="r">Gap per home</th><th class="r">Still open</th></tr></thead>
+        <tbody id="mapList"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="historyView" hidden aria-labelledby="histTitle">
+    <div class="panel">
+      <header><h2 id="histTitle">Documents read</h2><button id="histClearAll" hidden>Delete all history</button></header>
+      <p class="small muted">Every document Claude finishes reading is saved here, with what it found and when. History stays in this browser on this computer only.
+        Nobody else can see it, and it is lost if browser data is cleared. Delete anything you no longer need.</p>
+      <div class="alert warn">Saved files stay on this computer until you delete them. Do not keep real household documents here.</div>
+      <div class="applyrow" id="histTools" hidden>
+        <input id="histSearch" type="search" placeholder="Search by file name, type or text" aria-label="Search history" style="max-width:340px">
+        <select id="histType" aria-label="Filter by type" style="max-width:220px"><option value="">All types</option></select>
+      </div>
+      <p class="small" id="histEmpty">No documents yet. Read a document on the Documents tab and it will show up here.</p>
+      <div class="tablebox"><table id="histTable" hidden>
+        <thead><tr><th>Read on</th><th>File</th><th>Type</th><th>What it says</th><th></th></tr></thead>
+        <tbody id="histRows"></tbody>
+      </table></div>
+      <p class="small muted" id="histNote" role="status" style="margin-top:8px"></p>
+    </div>
+  </section>
+
+  <div id="sharedTop">
+  <!-- SUMMARY -->
+  <section class="strip" aria-label="Summary">
+    <div><div class="k">Cost to create one home</div><div class="v num" id="sCost"></div><div class="f" id="sCostF"></div></div>
+    <div><div class="k">Affordable price (capped)</div><div class="v num good" id="sPrice"></div><div class="f" id="sPriceF"></div></div>
+    <div><div class="k">Gap per home</div><div class="v num bad" id="sGap"></div><div class="f" id="sGapF"></div></div>
+    <div><div class="k">Still open after confirmed sources</div><div class="v num bad" id="sOpen"></div><div class="f" id="sOpenF"></div></div>
+  </section>
+  <div class="barbox"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
+  <div class="plainbox"><b id="plainTitle">What this means</b><p id="plainText"></p><p class="small muted" id="langNote" hidden></p></div>
+  <div class="reportrow"><button class="primary" id="pdfBtn">Download PDF report</button><span class="small muted" id="pdfNote" role="status">The numbers on this page, the formula steps and the sources, in one PDF.</span></div>
+
+  </div>
+
+  <div id="calcView">
+  <div class="grid">
+    <!-- LEFT: inputs -->
+    <div class="col">
+      <section class="panel">
+        <header><h2>Household and income limits</h2><span id="tableStatus"></span></header>
+        <div class="field"><label for="tableId">Income limit table</label><select id="tableId"></select></div>
+        <div class="field"><label for="tier">Income tier</label><select id="tier"></select></div>
+        <div class="field"><label for="beds">Bedrooms</label><input id="beds" type="number" min="0" max="7" step="1">
+          <span class="why">Household size = bedrooms + 1, the statute's "family size appropriate to the unit" (studio = 1, 3-bedroom = 4).</span></div>
+        <div class="alert" id="tableAlert" hidden></div>
+        <h3>From the table</h3>
+        <div class="calc" id="limitCalc"></div>
+      </section>
+
+      <section class="panel">
+        <header><h2>Cost to create one home</h2><span class="pill info">Sample values</span></header>
+        <div class="field"><label for="cost">Total development cost</label><input id="cost" type="number" step="1000">
+          <span class="why">Sample: $585,000 condo price on the fictional Loan Estimate (doc 04). Replace with the project's land + design + permits + build.</span></div>
+        <div class="field"><label for="homes">Homes in this project</label><input id="homes" type="number" min="1" step="1"></div>
+      </section>
+
+      <section class="panel">
+        <header><h2>Monthly cost items</h2><span class="pill info">Doc 04 ratios</span></header>
+        <div class="field"><label for="down">Down payment %</label><input id="down" type="number" step="0.5"><span class="why">Doc 04: 3%.</span></div>
+        <div class="field"><label for="taxIns">Property tax + insurance, % of price per year</label><input id="taxIns" type="number" step="0.01">
+          <span class="why">Doc 04 escrow $711/mo ÷ $585,000 × 12 = 1.46%.</span></div>
+        <div class="field"><label for="pmi">Mortgage insurance, % of loan per year</label><input id="pmi" type="number" step="0.01">
+          <span class="why">Doc 04: $260/mo ÷ $567,450 × 12 = 0.55%.</span></div>
+        <div class="field"><label for="hoa">HOA dues per month</label><input id="hoa" type="number" step="5"><span class="why">Doc 04: $425.</span></div>
+        <div class="field"><label for="util">Utility allowance per month</label><input id="util" type="number" step="5">
+          <span class="why">Counts toward housing cost in many programs. Enter the local allowance. 0 means not counted.</span></div>
+        <div class="field"><label for="maint">Maintenance per month</label><input id="maint" type="number" step="5"><span class="why">Enter if your program counts it.</span></div>
+      </section>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="col">
+      <section class="panel">
+        <header><h2>How the cap is worked out</h2><span id="tierPill"></span></header>
+        <div class="calc" id="capCalc"></div>
+        <p class="small muted" style="margin-top:8px">Formula from CA Health &amp; Safety Code 50052.5(b). Lower, extremely low and moderate income formulas were checked against
+          published copies of the statute, not the official code site. The very low income formula is still unverified.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>Mortgage rate</h2><span id="rateStatus"></span></header>
+        <div class="field"><label for="rateMode">Rate used</label>
+          <select id="rateMode"><option value="latest">Latest published weekly average</option><option value="custom">Custom rate</option></select></div>
+        <div class="field" id="customRow" hidden><label for="customRate">Custom rate %</label><input id="customRate" type="number" step="0.05"></div>
+        <p class="small muted" id="rateNote" style="margin-top:6px"></p>
+        <h3>If the rate moves</h3>
+        <div class="tablebox"><table id="sens"></table></div>
+        <p class="small muted" style="margin-top:6px">The price is capped by income, so a higher rate buys a smaller loan and the gap grows by the same amount.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>Who closes the gap</h2><button class="primary" id="addSrc">Add a source</button></header>
+        <div class="tablebox"><table class="stack">
+          <thead><tr><th>Source</th><th>Type</th><th>Status</th><th class="r">Per home ($)</th><th>Where the number came from</th><th></th></tr></thead>
+          <tbody id="srcRows"></tbody>
+        </table></div>
+        <p class="small muted" style="margin-top:8px">Only <b>confirmed</b> money counts as closing the gap. Pending and unconfirmed lines show as hatched. This page has no built-in program amounts, because program terms and funding change.</p>
+      </section>
+
+      <section class="panel">
+        <header><h2>What a gift closes</h2><span class="pill info">Donor view</span></header>
+        <div class="field"><label for="gift">Gift amount</label><input id="gift" type="number" step="1000"></div>
+        <p class="donor" id="donorText" style="margin-top:10px"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- RATE HISTORY -->
+  <section class="panel" style="margin-top:16px">
+    <header><h2>Rates move, and the gap moves with them</h2>
+      <div class="seg" role="group" aria-label="Time window" id="winSeg">
+        <button data-w="1" aria-pressed="false">1 yr</button><button data-w="5" aria-pressed="true">5 yr</button>
+        <button data-w="10" aria-pressed="false">10 yr</button><button data-w="99" aria-pressed="false">Since 2000</button></div></header>
+    <div class="kpis" id="rateKpis"></div>
+    <svg class="chart" id="chart" viewBox="0 0 1000 380" role="img" aria-label="Weekly 30-year mortgage rate and the gap per home at that rate"></svg>
+    <div class="tip" id="tip">Hover or tap the chart to read a week.</div>
+    <p class="small muted" style="margin-top:6px">Gap line: this home's gap if it had sold at that week's rate, holding today's income limits and costs fixed. Rates are national averages for strong-credit borrowers, so a real quote may be higher.</p>
+  </section>
+
+  </div><!-- /calcView -->
+
+  <div id="planView" hidden>
+    <section class="panel" aria-labelledby="planTitle">
+      <header><h2 id="planTitle">Action plan: how to close this gap</h2>
+        <div class="applyrow" style="margin:0"><button class="primary" id="planCopy">Copy plan</button><button id="planReset">Clear checkmarks</button></div></header>
+      <p class="small" id="planHead"></p>
+      <p class="small muted">Steps follow the order most projects use. Amounts come from this page; program amounts are set by each program, so add them to the funding stack once you have them in writing.
+        Checkmarks are saved in this browser only. Not legal or lending advice.</p>
+      <ol id="planSteps" class="steps"></ol>
+      <p class="small muted" id="planNote" role="status"></p>
+      <textarea id="planText" hidden rows="10" style="width:100%;font:12.5px var(--font-num)" aria-label="Plan as text"></textarea>
+      <h3>Who to work with and where to find them</h3>
+      <div class="tablebox"><table style="min-width:640px">
+        <thead><tr><th>Partner</th><th>What they help with</th><th>Where to find them</th><th>Confidence</th></tr></thead>
+        <tbody id="planPartners"></tbody></table></div>
+    </section>
+  </div>
+
+  <div id="involvedView" hidden>
+    <section class="panel" aria-labelledby="invTitle">
+      <header><h2 id="invTitle">Get involved: give, donate goods, volunteer</h2><span class="pill info">Every gift is tied to a real gap</span></header>
+      <p class="small muted">This page does not take payments or collect personal details. Money goes through the nonprofit's own donation page, and the volunteer form only builds a message you send yourself.</p>
+      <div class="invgrid">
+        <article class="invcard">
+          <img src="img/gift.jpg" alt="Illustration: hands placing a check in an envelope" class="invimg">
+          <h3 class="invh">Give money</h3>
+          <div class="field"><label for="giveAmt">Gift amount</label><input id="giveAmt" type="number" min="0" step="100" value="5000"></div>
+          <div class="field"><label for="giveProject">Toward</label><select id="giveProject"></select></div>
+          <p class="donor" id="giveOut" style="font-size:15px"></p>
+          <div class="field"><label for="giveUrl">Nonprofit's donation page (https link)</label><input id="giveUrl" type="url" placeholder="https://..." style="text-align:left">
+            <span class="why">Paste the nonprofit's real donation link before the demo. Saved in this browser only.</span></div>
+          <div class="applyrow"><a id="giveGo" class="navbtn" target="_blank" rel="noopener" hidden>Open donation page →</a></div>
+        </article>
+        <article class="invcard">
+          <img src="img/goods-dropoff.jpg" alt="Illustration: volunteers sorting donated furniture at a resale store" class="invimg">
+          <h3 class="invh">Donate goods</h3>
+          <p class="small">Donated items are resold, and the money goes toward building homes.</p>
+          <ul class="small" id="goodsList" style="padding-left:18px;margin:0"></ul>
+          <div class="field"><label for="goodsVal">Your estimate of resale value</label><input id="goodsVal" type="number" min="0" step="50">
+            <span class="why">Your own estimate. The store sets the actual price. Ask for a receipt; this is not tax advice.</span></div>
+          <p class="small" id="goodsOut"></p>
+          <div class="applyrow"><button id="goodsAdd">Add to funding stack (not confirmed)</button></div>
+          <p class="small muted" id="goodsNote" role="status"></p>
+        </article>
+        <article class="invcard">
+          <img src="img/car-donation.jpg" alt="Illustration: an owner handing over an older car for donation, tow truck in the background" class="invimg">
+          <h3 class="invh">Donate a vehicle</h3>
+          <div class="field"><label for="carMode">How should it help?</label>
+            <select id="carMode"><option value="sell">Sell it to fund homes</option><option value="family">Give it to a family who needs transport</option></select></div>
+          <div class="field"><label for="carDesc">Year, make and model</label><input id="carDesc" type="text" placeholder="2012 sedan" style="text-align:left"></div>
+          <div class="field" id="carValRow"><label for="carVal">Your estimate of what it would sell for</label><input id="carVal" type="number" min="0" step="100">
+            <span class="why">Your own estimate. Donated cars are usually sold at auction; the real amount is known only after the sale.</span></div>
+          <p class="small" id="carOut"></p>
+          <div class="applyrow" id="carAddRow"><button id="carAdd">Add to funding stack (not confirmed)</button></div>
+          <p class="small muted" id="carNote" role="status"></p>
+          <details class="small"><summary><b>Paperwork checklist</b></summary>
+            <ul style="padding-left:18px;margin:6px 0 0">
+              <li>Title in your name, signed over as the program tells you.</li>
+              <li>Smog certificate if your area and the car's age require it (ask the program).</li>
+              <li>Tell the DMV you no longer own the car (California: Notice of Transfer and Release of Liability).</li>
+              <li>Remove plates if the program asks, and cancel your insurance after pickup.</li>
+              <li>Keep the written receipt from the program.</li>
+            </ul></details>
+          <p class="small muted">Taxes: in the US, if the charity sells the car for more than $500, the deduction is generally limited to the sale price, and the charity sends you a form showing it. Not tax advice: ask a tax preparer.</p>
+          <div class="applyrow"><button id="carMsg">Copy my donation message</button></div>
+          <textarea id="carText" hidden rows="8" style="width:100%;font:12.5px var(--font-num)" aria-label="Vehicle donation message"></textarea>
+        </article>
+        <article class="invcard">
+          <img src="img/volunteer-wall.jpg" alt="Illustration: volunteers raising a wood wall frame" class="invimg">
+          <h3 class="invh">Volunteer</h3>
+          <p class="small">Pick what you'd like to do. Build days are posted by the nonprofit.</p>
+          <div id="volRoles" class="roles"></div>
+          <div class="field"><label for="volName">Your name</label><input id="volName" type="text" autocomplete="name" style="text-align:left"></div>
+          <div class="field"><label for="volLang">Languages you speak</label><input id="volLang" type="text" placeholder="English, Spanish, Vietnamese" style="text-align:left"></div>
+          <div class="field"><label for="volWhen">When you're free</label><input id="volWhen" type="text" placeholder="Saturdays, weekday evenings" style="text-align:left"></div>
+          <div class="applyrow"><button class="primary" id="volMake">Copy my volunteer message</button></div>
+          <p class="small muted" id="volNote" role="status"></p>
+          <textarea id="volText" hidden rows="9" style="width:100%;font:12.5px var(--font-num)" aria-label="Volunteer message"></textarea>
+        </article>
+      </div>
+      <p class="small muted" style="margin-top:10px">Images are AI-generated illustrations, not real people or events.</p>
+    </section>
+  </div>
+
+  <div id="docsView" hidden>
+  <!-- DOCUMENTS -->
+  <section class="panel" aria-labelledby="docsTitle">
+    <header><h2 id="docsTitle">Read documents</h2><span class="pill info">Claude reads, code does the math</span></header>
+    <p class="small muted">Pay stubs, bank statements, Loan Estimates, purchase contracts, development budgets and funding commitment letters.
+      Each value comes with a quote from the document. Nothing changes in the calculator until you click Apply.</p>
+    <div class="alert warn">Use only fictional or properly redacted documents. Files are sent to Claude on your claude.ai account. Blacked-out values show as "Redacted", never guessed.</div>
+    <p class="small" id="docUnavailable" style="margin-top:10px">Document reading works on the claude.ai copy of this page, where Claude can be allowed to read files:
+      <a href="https://claude.ai/artifact/H2u7Rsfp4V8dLsevGqSCsE" target="_blank" rel="noopener">open it here</a>.</p>
+    <div id="docControls" hidden>
+      <label class="drop" id="docDrop" for="docInput">
+        <span><b>Drop PDFs or photos here</b>, or click to choose files</span>
+        <span class="small muted">PDF, JPG or PNG. The first call asks you to allow Claude for this page.</span>
+        <input id="docInput" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
+      </label>
+      <div class="applyrow"><button class="primary" id="docLive">Live demo: read the commitment letter</button><select id="docSet" aria-label="Sample set" style="width:auto"></select><button id="docSamples">Load sample documents</button><button id="docClear" hidden>Clear documents</button>
+        <span class="small muted">Pick a fictional family or the project documents, then load them. Answer key: FAMILIES.md.</span></div>
+    </div>
+    <p class="small muted" id="docNote" role="status" style="margin-top:8px"></p>
+    <div id="docList" class="doclist"></div>
+    <div id="docHousehold"></div>
+  </section>
+
+  </div>
+
+  <div id="optsView" hidden>
+      <section class="panel" aria-labelledby="optsTitle">
+        <header><h2 id="optsTitle">Ways to shrink the gap</h2><span class="pill info">Try options</span></header>
+
+        <p class="small muted">Four ways to shrink the gap. Each card shows its effect on the home on the Calculator tab. Try one at a time.</p>
+        <div class="optgrid">
+        <article class="optcard" aria-labelledby="opt-bd-t">
+          <header class="opthead"><h3 id="opt-bd-t">Rate buydown</h3></header>
+          <p class="optline">Pay points up front so the family gets a lower rate, which buys more house for the same payment.</p>
+          <p class="optres" id="bdRes" role="status"></p>
+
+        <div class="field"><label for="bd">Lower the rate by (%)</label><input id="bd" type="number" min="0" max="3" step="0.125">
+          <span class="why">Paid up front by a seller, builder or program. 0 means no buydown.</span></div>
+        <div class="field"><label for="ppq">Points per 0.25% lower</label><input id="ppq" type="number" min="0" step="0.25">
+          <span class="why">1 point = 1% of the loan. About 1 point per 0.25% is a common rule of thumb; lenders price this differently. Get a real quote.</span></div>
+        <div class="calc" id="bdCalc"></div>
+        </article>
+        <article class="optcard" aria-labelledby="opt-land-t">
+          <header class="opthead"><h3 id="opt-land-t">Community land trust</h3></header>
+          <p class="optline">The trust keeps the land, so the family buys only the house.</p>
+          <p class="optres" id="landRes" role="status"></p>
+
+        <div class="field"><label for="landCost">Land cost per home</label><input id="landCost" type="number" step="1000">
+          <span class="why">Sample: $1,440,000 land line ÷ 12 homes on the fictional budget (doc 10).</span></div>
+        <div class="field"><label for="landStatus">Is the land already secured?</label>
+          <select id="landStatus"><option value="confirmed">Yes, the trust owns or has it</option><option value="pending">Applied / pending</option><option value="unconfirmed">Not confirmed</option></select></div>
+        <div class="applyrow"><button id="addLand">Add land to the funding stack</button></div>
+        <p class="small muted" style="margin-top:6px">The trust keeps the land and the family buys only the house, so the land cost leaves the family's price. The land still has to be paid for, so it shows as a funding line. In return, resale prices are capped so the home stays affordable for the next family.</p>
+        </article>
+        <article class="optcard" aria-labelledby="opt-cb-t">
+          <header class="opthead"><h3 id="opt-cb-t">Co-buyers</h3></header>
+          <p class="optline">Two households buy together, like relatives or friends.</p>
+          <p class="optres" id="cbRes" role="status"></p>
+
+        <div class="field"><label for="cb1Inc">Household 1 income (yearly)</label><input id="cb1Inc" type="number" step="1000">
+          <span class="why">Sample: Herrera pay stubs, year-to-date average (docs 01b and 02).</span></div>
+        <div class="field"><label for="cb1Size">Household 1 people</label><input id="cb1Size" type="number" min="1" max="8" step="1"></div>
+        <div class="field"><label for="cb2Inc">Household 2 income (yearly)</label><input id="cb2Inc" type="number" step="1000">
+          <span class="why">A relative or friend buying together. 0 means no co-buyer.</span></div>
+        <div class="field"><label for="cb2Size">Household 2 people</label><input id="cb2Size" type="number" min="0" max="8" step="1"></div>
+        <div class="field"><label for="cbShare">Share of income for housing %</label><input id="cbShare" type="number" min="20" max="45" step="1"></div>
+        <div class="calc" id="cbCalc"></div>
+        <p class="small muted" style="margin-top:6px">Both co-buyers sign the loan and are responsible for it. Use a written co-ownership agreement that says what happens if one wants to sell.</p>
+        </article>
+        <article class="optcard" aria-labelledby="opt-eq-t">
+          <header class="opthead"><h3 id="opt-eq-t">Shared equity loan</h3></header>
+          <p class="optline">A program pays part of the price now and gets the same share of the value back later, like UK Help to Buy.</p>
+          <p class="optres" id="eqRes" role="status"></p>
+
+        <p class="small">No monthly payment for a set time. When the family sells or refinances, they repay the same <b>percent of the home's value then</b>, not the original amount.</p>
+        <div class="field"><label for="eqPct">Program share of the price %</label><input id="eqPct" type="number" min="0" max="40" step="1">
+          <span class="why">UK Help to Buy lent up to 20% (40% in London). Dream For All has offered up to 20%, capped. Check current terms.</span></div>
+        <div class="field"><label for="eqYears">Years with no payment</label><input id="eqYears" type="number" min="0" max="30" step="1">
+          <span class="why">Help to Buy charged no interest for 5 years, then fees started, so many owners remortgaged to repay it.</span></div>
+        <div class="calc" id="eqCalc"></div>
+        <div class="applyrow"><button id="addEq">Add the equity loan's effect to the funding stack</button></div>
+        <p class="small muted" style="margin-top:6px">Watch out: at the end of the no-payment period the family may need to remortgage at whatever rate applies then. On a resale-restricted home, value growth is capped, so the repayment and the family's gain are both smaller.</p>
+        </article>
+        </div>
+      </section>
+
+  </div>
+
+  <dialog id="progDialog" aria-labelledby="progTitle">
+    <div class="viewerbar"><b>Program atlas</b><button id="progClose">Close</button></div>
+    <div id="progDialogBody" class="progdialogbody"></div>
+  </dialog>
+
+  <dialog id="docViewer" aria-labelledby="docViewerTitle">
+    <div class="viewerbar"><b id="docViewerTitle"></b><button id="docViewerClose">Close</button></div>
+    <div id="docViewerBody" class="viewerbody"></div>
+  </dialog>
+
+  <footer class="sitefoot">
+    <div class="footbrand">
+      <img class="logo logo-light" src="img/ocmee-logo-black.png" alt="OCMEE Design" width="900" height="111">
+      <img class="logo logo-dark" src="img/ocmee-logo-white.png" alt="OCMEE Design" width="900" height="111">
+      <span class="program">Affordable Homes Program</span>
+      <span class="small muted">Built at Claude Impact Lab, Orange County</span>
+    </div>
+    <div class="footcols">
+      <div><b>Sources</b><p class="small"><span id="srcList"></span></p></div>
+      <div><b>About these numbers</b><p class="small">Explains numbers only. Not legal, lending or investment advice. Check program terms with the program and a housing counselor.
+        Sample values come from the fictional Claude Impact Lab document pack.</p></div>
+      <div><b>Start over</b><p class="small">Put every input back to the sample family and home.</p><button id="reset">Reset sample</button></div>
+    </div>
+  </footer>
+</div>
+
+<button id="chatFab" aria-controls="chatPanel" aria-expanded="false"><span aria-hidden="true">💬</span> Ask a question</button>
+<section id="chatPanel" role="dialog" aria-label="Help and support" hidden>
+  <div class="chathead">
+    <div class="chattabs" role="tablist">
+      <button role="tab" id="chatTab-ask" aria-selected="true" aria-controls="chatPane-ask">Ask</button>
+      <button role="tab" id="chatTab-help" aria-selected="false" aria-controls="chatPane-help">Contact support</button>
+    </div>
+    <button class="x" id="chatClose" aria-label="Close help">×</button>
+  </div>
+  <div class="chatpane" id="chatPane-ask" role="tabpanel">
+    <div id="chatLog" aria-live="polite"></div>
+    <div id="chatChips" aria-label="Quick questions"></div>
+    <div class="chatform">
+      <textarea id="chatInput" aria-label="Your question" placeholder="Ask about the price or the gap"></textarea>
+      <button class="primary" id="chatSend">Send</button><button id="chatStop" hidden>Stop</button>
+    </div>
+    <p class="small muted chatfoot"><span id="chatMode"></span> Don't type SSNs, account numbers or addresses. Not legal or loan advice.</p>
+  </div>
+  <div class="chatpane" id="chatPane-help" role="tabpanel" hidden>
+    <div class="supitem"><b>Free housing counselor</b>HUD-approved counselors help with budgets, credit and down-payment programs, usually at no cost.<br>
+      <a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">Find a counselor near you</a></div>
+    <div class="supitem"><b>211 Orange County</b>Call <strong>2-1-1</strong> for local help with housing, food and bills, any time.<br>
+      <a href="https://www.211oc.org" target="_blank" rel="noopener">211oc.org</a></div>
+    <div class="supitem"><b>Email the program</b>
+      <a class="primary" id="supMail" hidden>Write an email with my numbers</a>
+      <p class="small muted" id="supMailNote" style="margin:4px 0"></p>
+      <label class="small" for="supEmail">Program support email (staff)</label>
+      <input id="supEmail" type="email" placeholder="help@your-program.org" autocomplete="off">
+    </div>
+    <div class="supitem"><b>Share your numbers</b>Copy a short summary to send to a counselor or lender.<br>
+      <button id="supCopy" style="margin-top:6px">Copy summary</button> <span class="small muted" id="supCopyNote" role="status"></span></div>
+  </div>
+</section>
+<script src="limits.js"></script>
+<script src="rates.js"></script>
+<script>
+const SAMPLE = { tableId: "state-2026-rev", tier: "li", beds: 3, cost: 585000, homes: 1,
+  down: 3, taxIns: 1.46, pmi: 0.55, hoa: 425, util: 0, maint: 0, rateMode: "latest", customRate: 6.5, gift: 50000,
+  bd: 0, ppq: 1, landCost: 120000, landStatus: "confirmed", cb1Inc: 89219, cb1Size: 4, cb2Inc: 0, cb2Size: 0, cbShare: 30, eqPct: 20, eqYears: 5,
+  sources: [
+    { name: "City down-payment loan (example)", type: "City", status: "pending", amount: 0, src: "Enter program terms" },
+  ] };
+const TYPES = ["City", "State", "Federal", "Down-payment program", "Lender", "Employer", "Donor", "Earned revenue", "Developer fee / land"];
+const STATUSES = { confirmed: "Confirmed", pending: "Applied / pending", unconfirmed: "Funds not confirmed" };
+const FIELDS = ["tableId", "tier", "beds", "cost", "homes", "down", "taxIns", "pmi", "hoa", "util", "maint", "rateMode", "customRate", "gift",
+  "bd", "ppq", "landCost", "landStatus", "cb1Inc", "cb1Size", "cb2Inc", "cb2Size", "cbShare", "eqPct", "eqYears"];
+const $ = id => document.getElementById(id);
+const money = x => (x < 0 ? "−$" : "$") + Math.round(Math.abs(x)).toLocaleString("en-US");
+const n = id => parseFloat($(id).value) || 0;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmtDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const TODAY = new Date();
+let sources = [], win = 5;
+
+const pmtFactor = rate => { const r = rate / 100 / 12; return r ? r / (1 - Math.pow(1 + r, -360)) : 1 / 360; };
+const PTS = window.RATES.points;
+const LATEST = PTS[PTS.length - 1];
+
+// ---------- setup ----------
+$("tableId").innerHTML = LIMIT_TABLES.map(t => `<option value="${t.id}">${esc(t.name)}${t.superseded ? " (replaced)" : ""}</option>`).join("");
+$("tier").innerHTML = TIERS.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+
+function load(s) {
+  FIELDS.forEach(k => $(k).value = s[k]);
+  sources = s.sources.map(x => ({ ...x }));
+  renderSources(); calc();
+}
+
+function renderSources() {
+  $("srcRows").innerHTML = sources.map((s, i) => `<tr>
+    <td><input id="sn${i}" data-i="${i}" data-k="name" value="${esc(s.name)}" placeholder="Program or funder" aria-label="Source name"></td>
+    <td><select id="st${i}" data-i="${i}" data-k="type" aria-label="Type">${TYPES.map(t => `<option${t === s.type ? " selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><select id="ss${i}" data-i="${i}" data-k="status" aria-label="Status">${Object.entries(STATUSES).map(([k, v]) => `<option value="${k}"${k === s.status ? " selected" : ""}>${v}</option>`).join("")}</select></td>
+    <td><input id="sa${i}" data-i="${i}" data-k="amount" type="number" step="1000" value="${s.amount}" aria-label="Amount per home"></td>
+    <td><input id="sr${i}" data-i="${i}" data-k="src" value="${esc(s.src)}" placeholder="Award letter, NOFA, terms sheet…" aria-label="Source of number"></td>
+    <td><button class="x" data-del="${i}" aria-label="Remove">×</button></td></tr>`).join("");
+}
+$("srcRows").addEventListener("input", e => {
+  const el = e.target, i = el.dataset.i; if (i === undefined) return;
+  sources[i][el.dataset.k] = el.dataset.k === "amount" ? (parseFloat(el.value) || 0) : el.value; calc();
+});
+$("srcRows").addEventListener("click", e => { const d = e.target.dataset.del; if (d !== undefined) { sources.splice(+d, 1); renderSources(); calc(); } });
+$("addEq").onclick = () => {
+  const e = window.EQ; if (!e || !e.gain) return;
+  const row = { name: `Shared equity loan (${Math.round(e.eq * 100)}% of price)`, type: "Down-payment program", status: "pending", amount: Math.round(e.gain),
+    src: `Program lends ${money(e.amt)}; repaid as ${Math.round(e.eq * 100)}% of value. Ways to shrink the gap tab`, equity: true };
+  const i = sources.findIndex(s => s.equity);
+  if (i >= 0) sources[i] = row; else sources.push(row);
+  renderSources(); calc();
+};
+$("addLand").onclick = () => {
+  const amt = Math.round(n("landCost"));
+  if (!amt) return;
+  const i = sources.findIndex(s => s.land);
+  const row = { name: "Land held by community land trust", type: "Developer fee / land", status: $("landStatus").value, amount: amt,
+    src: "Land cost per home (Ways to shrink the gap)", land: true };
+  if (i >= 0) sources[i] = row; else sources.push(row);
+  renderSources(); calc();
+};
+$("addSrc").onclick = () => { sources.push({ name: "", type: "Donor", status: "unconfirmed", amount: 0, src: "" }); renderSources(); calc(); $("sn" + (sources.length - 1)).focus(); };
+
+// ---------- core math ----------
+// o: optional overrides {tier, beds, cost, bd} so the map can price any sample project with the same math.
+// A rate buydown lowers the rate the family pays (more price) but costs points up front (added to the gap).
+function model(baseRate, o = {}) {
+  const bd = Math.max(0, o.bd ?? n("bd"));
+  const rate = Math.max(0, baseRate - bd);
+  const tierT = TIERS.find(t => t.id === (o.tier ?? $("tier").value));
+  const stateT = LIMIT_TABLES.find(t => t.id === "state-2026-rev");
+  const hh = Math.min(8, Math.max(1, Math.round(o.beds ?? n("beds")) + 1));
+  const median = stateT.rows["Median"][hh - 1];
+  const cap = tierT.share * tierT.amiMult * median / 12;
+  const d = n("down") / 100;
+  const perDollar = (1 - d) * (pmtFactor(rate) + n("pmi") / 100 / 12) + n("taxIns") / 100 / 12;
+  const fixed = n("hoa") + n("util") + n("maint");
+  const price = Math.max(0, (cap - fixed) / perDollar);
+  const cost = o.cost ?? n("cost");
+  const bdCost = price * (1 - d) * n("ppq") * (bd / 0.25) / 100;
+  return { tierT, hh, median, cap, d, perDollar, fixed, price, cost, bd, rate, bdCost, gap: Math.max(0, cost + bdCost - price) };
+}
+const currentRate = () => $("rateMode").value === "custom" ? n("customRate") : LATEST[1];
+
+function calc() {
+  $("customRow").hidden = $("rateMode").value !== "custom";
+  const rate = currentRate();
+  const m = model(rate);
+  const homes = Math.max(1, Math.round(n("homes")));
+
+  // --- table status / staleness ---
+  const t = LIMIT_TABLES.find(x => x.id === $("tableId").value);
+  const ageDays = (TODAY - new Date(t.effective + "T12:00:00")) / 864e5;
+  const newCycle = TODAY.getMonth() >= 4 && TODAY.getFullYear() > new Date(t.effective).getFullYear();
+  let status, alert = null;
+  if (t.superseded) { status = `<span class="pill bad">Replaced</span>`; alert = ["bad", `${t.note} Switch to the revised table.`]; }
+  else if (ageDays > 365 || newCycle) { status = `<span class="pill warn">Check for update</span>`; alert = ["warn", `This table is ${Math.round(ageDays)} days old. HCD usually publishes new limits each spring. Check the source before using these numbers.`]; }
+  else { status = `<span class="pill ok">Current · ${fmtDate(t.effective)}</span>`; }
+  $("tableStatus").innerHTML = status;
+  $("tableAlert").hidden = !alert;
+  if (alert) { $("tableAlert").className = "alert " + alert[0]; $("tableAlert").textContent = alert[1]; }
+  const limitVal = t.rows && t.rows[m.tierT.limitRow] ? t.rows[m.tierT.limitRow][m.hh - 1] : null;
+  $("limitCalc").innerHTML = `
+    Table: <b>${esc(t.name)}</b>, ${esc(t.agency)}, dated ${fmtDate(t.effective)}<br>
+    ${t.superseded ? "" : `Household size: <b>${m.hh}</b> (${n("beds")} bedrooms + 1)<br>`}
+    ${limitVal ? `Eligibility limit, ${esc(m.tierT.limitRow)}: <b>${money(limitVal)}</b> per year<br>` : `Eligibility limit for this tier: <b>not in this table</b><br>`}
+    Median for ${m.hh} people (State table, used by the formula): <b>${money(m.median)}</b><br>
+    <a href="${t.url}" target="_blank" rel="noopener">Open source PDF</a>${t.superseded ? "" : ` · ${esc(t.note)}`}`;
+
+  // --- cap calc ---
+  $("tierPill").innerHTML = m.tierT.verified ? `<span class="pill ok">Formula checked</span>` : `<span class="pill warn">Formula unverified</span>`;
+  $("capCalc").innerHTML = `
+    Monthly cap = ${m.tierT.share * 100}% × ${Math.round(m.tierT.amiMult * 100)}% × ${money(m.median)} ÷ 12 = <b>${money(m.cap)}</b><br>
+    − HOA ${money(n("hoa"))} − utilities ${money(n("util"))} − maintenance ${money(n("maint"))} = <b>${money(m.cap - m.fixed)}</b> left for the loan, tax and insurance<br>
+    Each $1,000 of price costs $${(m.perDollar * 1000).toFixed(2)} a month at ${rate.toFixed(2)}% (loan, mortgage insurance, tax, insurance)<br>
+    Affordable price = ${money(m.cap - m.fixed)} ÷ ${m.perDollar.toFixed(6)} = <b>${money(m.price)}</b>`;
+
+  // --- sources ---
+  const amt = st => sources.filter(s => s.status === st).reduce((a, s) => a + (s.amount || 0), 0);
+  const conf = amt("confirmed"), pend = amt("pending") + amt("unconfirmed");
+  const open = Math.max(0, m.gap - conf);
+  const openIfAll = Math.max(0, m.gap - conf - pend);
+
+  // --- summary strip ---
+  $("sCost").textContent = money(m.cost);
+  $("sCostF").textContent = homes > 1 ? `${homes} homes = ${money(m.cost * homes)}` : "per home";
+  $("sPrice").textContent = money(Math.min(m.price, m.cost));
+  $("sPriceF").textContent = `${m.tierT.name.toLowerCase()}, ${m.hh} people, ${rate.toFixed(2)}%`;
+  $("sGap").textContent = money(m.gap);
+  $("sGapF").textContent = homes > 1 ? `project: ${money(m.gap * homes)}` : `${m.cost ? Math.round(m.gap / m.cost * 100) : 0}% of cost`;
+  $("sOpen").textContent = money(open);
+  $("sOpenF").textContent = pend ? `${money(openIfAll)} if pending money comes through` : (conf ? `after ${money(conf)} confirmed` : "no confirmed sources yet");
+
+  const whole = Math.max(m.cost, 1);
+  const segs = [
+    ["seg-fam", "Family's price", Math.min(m.price, m.cost)],
+    ["seg-ok", "Confirmed", Math.min(conf, m.gap)],
+    ["seg-pend", "Pending / unconfirmed", Math.min(pend, Math.max(0, m.gap - conf))],
+    ["seg-gap", "Open gap", openIfAll],
+  ].filter(s => s[2] > 0.5);
+  $("bar").innerHTML = segs.map(([c, l, v]) => `<div class="${c}" style="flex-basis:${(v / whole * 100).toFixed(2)}%" title="${l}: ${money(v)}">${v / whole > .14 ? l + " " + money(v) : ""}</div>`).join("");
+  const sw = { "seg-fam": "var(--good)", "seg-ok": "var(--fund)", "seg-pend": "repeating-linear-gradient(135deg, var(--fund) 0 3px, transparent 3px 5px)", "seg-gap": "var(--bad)" };
+  $("legend").innerHTML = segs.map(([c, l, v]) => `<span><i style="background:${sw[c]}"></i>${l}: <span class="num">${money(v)}</span></span>`).join("");
+
+  // --- rate status ---
+  const rAge = (TODAY - new Date(LATEST[0] + "T12:00:00")) / 864e5;
+  $("rateStatus").innerHTML = $("rateMode").value === "custom" ? `<span class="pill info">Custom</span>`
+    : rAge > 14 ? `<span class="pill warn">Stale · ${fmtDate(LATEST[0])}</span>` : `<span class="pill ok">${LATEST[1].toFixed(2)}% · ${fmtDate(LATEST[0])}</span>`;
+  $("rateNote").innerHTML = `${esc(window.RATES.name)}. Series <a href="${window.RATES.url}" target="_blank" rel="noopener">${window.RATES.series}</a>, data pulled ${fmtDate(window.RATES.fetched)}.`
+    + (rAge > 14 && $("rateMode").value !== "custom" ? ` Latest week is ${Math.round(rAge)} days old: run tools/refresh_rates.py.` : "");
+
+  // --- sensitivity ---
+  const rows = [];
+  for (let dlt = -1; dlt <= 1.0001; dlt += 0.25) {
+    const r = rate + dlt, mm = model(r);
+    rows.push(`<tr class="${Math.abs(dlt) < 1e-9 ? "now" : ""}"><td class="num">${r.toFixed(2)}%${Math.abs(dlt) < 1e-9 ? " (now)" : ""}</td>
+      <td class="r num">${money(mm.price)}</td><td class="r num">${money(mm.gap)}</td>
+      <td class="r num">${Math.abs(dlt) < 1e-9 ? "–" : (mm.gap - m.gap >= 0 ? "+" : "") + money(mm.gap - m.gap)}</td></tr>`);
+  }
+  $("sens").innerHTML = `<thead><tr><th>Rate</th><th class="r">Affordable price</th><th class="r">Gap per home</th><th class="r">Change</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+
+  // --- donor ---
+  const gift = n("gift");
+  const target = open > 0 ? open : m.gap;
+  if (gift <= 0 || m.gap <= 0) {
+    $("donorText").innerHTML = m.gap <= 0 ? "This home pencils without help at these inputs." : "Enter a gift amount.";
+  } else {
+    const share = gift / target;
+    const homesClosed = Math.floor(gift / target);
+    const unit = `${m.hh - 1}-bedroom home for a ${m.tierT.name.toLowerCase()} family of ${m.hh}`;
+    $("donorText").innerHTML = share >= 1
+      ? `Your <b>${money(gift)}</b> closes the open gap on <b>${homesClosed}</b> ${homesClosed === 1 ? "home" : "homes"} (${money(target)} each), a ${unit}.`
+        + (homes > 1 ? ` The project has ${homes} homes.` : "")
+      : `Your <b>${money(gift)}</b> closes <b>${Math.round(share * 100)}%</b> of the ${open > 0 && conf ? "remaining " : ""}gap on one ${unit}. `
+        + `It covers ${money(gift)} of the ${money(target)} between what the home costs to build (${money(m.cost)}) and what the family can pay (${money(Math.min(m.price, m.cost))})`
+        + `${conf ? ` after ${money(conf)} in confirmed sources` : ""}.`;
+  }
+
+  // --- rate buydown ---
+  const m0 = model(rate, { bd: 0 });
+  $("bdCalc").innerHTML = m.bd > 0
+    ? `Rate ${rate.toFixed(2)}% − ${m.bd}% = <b>${m.rate.toFixed(3)}%</b><br>
+       Affordable price: ${money(m0.price)} → <b>${money(m.price)}</b> (+${money(m.price - m0.price)})<br>
+       Buydown cost: ${n("ppq")} point${n("ppq") === 1 ? "" : "s"} × ${(m.bd / 0.25).toFixed(1)} × 1% of the ${money(m.price * (1 - m.d))} loan = <b>${money(m.bdCost)}</b><br>
+       Net change in the gap: <b>${m.gap - m0.gap <= 0 ? "−" : "+"}${money(Math.abs(m.gap - m0.gap))}</b> per home
+       ${m.gap < m0.gap ? "(the buydown pays for itself)" : "(the buydown costs more than it adds)"}`
+    : `Set a buydown above to see how much price it adds and what it costs. At ${rate.toFixed(2)}%, every 0.25% lower adds about ${money(model(rate, { bd: 0.25 }).price - m0.price)} of price before its cost.`;
+
+  // --- shared equity loan (Help to Buy style) ---
+  const eq = Math.min(0.6, Math.max(0, n("eqPct") / 100)), yrs = Math.max(0, Math.round(n("eqYears")));
+  const kLoan = pmtFactor(m.rate) + n("pmi") / 100 / 12, kTax = n("taxIns") / 100 / 12;
+  const loanShare = Math.max(0, 1 - m.d - eq);
+  const pEq = Math.max(0, (m.cap - m.fixed) / (loanShare * kLoan + kTax));
+  const pEqCapped = Math.min(pEq, m.cost);
+  const eqAmt = eq * pEqCapped, eqGain = Math.max(0, pEqCapped - Math.min(m.price, m.cost));
+  window.EQ = { eq, gain: eqGain, amt: eqAmt };
+  const growth = g => money(eq * pEqCapped * Math.pow(1 + g, yrs));
+  $("eqCalc").innerHTML = eq > 0 ? `
+    Family pays ${(m.d * 100).toFixed(1)}% down, borrows ${(loanShare * 100).toFixed(1)}%, the program lends ${(eq * 100).toFixed(0)}%<br>
+    Same ${money(m.cap - m.fixed)}/month now buys about <b>${money(pEq)}</b> (was ${money(m.price)})${pEq > m.cost ? `, more than this home costs` : ""}<br>
+    Program loan: ${(eq * 100).toFixed(0)}% \u00d7 ${money(pEqCapped)} = <b>${money(eqAmt)}</b>, no payment for ${yrs} years<br>
+    Gap it closes on this home: <b>${money(eqGain)}</b><br>
+    Repayment after ${yrs} years is ${(eq * 100).toFixed(0)}% of the value then. Examples, not forecasts: value flat ${growth(0)} \u00b7 +3%/yr ${growth(0.03)} \u00b7 +5%/yr ${growth(0.05)}`
+    : "Set a program share above 0% to see the effect.";
+
+  // --- co-buyers ---
+  const inc = n("cb1Inc") + n("cb2Inc");
+  const size = Math.min(8, Math.max(1, Math.round(n("cb1Size") + n("cb2Size"))));
+  const budget = inc * n("cbShare") / 100 / 12;
+  const marketPrice = Math.max(0, (budget - m.fixed) / m.perDollar);
+  const lim = t.rows && t.rows[m.tierT.limitRow] ? t.rows[m.tierT.limitRow][size - 1] : null;
+  const co = n("cb2Inc") > 0;
+  $("cbCalc").innerHTML = `
+    Combined income: <b>${money(inc)}</b>/year for <b>${size}</b> ${size === 1 ? "person" : "people"}${co ? " (two households)" : ""}<br>
+    ${lim ? `${esc(m.tierT.name)} limit for ${size} people (${esc(t.name)}): <b>${money(lim)}</b> → ${inc <= lim
+      ? `<span style="color:var(--good)">under the limit</span>` : `<span style="color:var(--bad)">over the limit, may not qualify for this home</span>`}<br>` : ""}
+    Market-rate home: ${n("cbShare")}% × ${money(inc)} ÷ 12 = ${money(budget)}/month buys about <b>${money(marketPrice)}</b>; gap to ${money(m.cost)} is <b>${money(Math.max(0, m.cost - marketPrice))}</b><br>
+    Income-restricted home: price stays capped at <b>${money(Math.min(m.price, m.cost))}</b> by the formula, whatever the buyers earn.
+    ${co ? "Co-buying here mainly helps qualify for the loan and cover the down payment." : ""}`;
+
+  // --- one-line results at the top of each option card ---
+  const setRes = (id, html, cls = "") => { const el = $(id); if (el) { el.innerHTML = html; el.className = "optres" + (cls ? " " + cls : ""); } };
+  const per25 = m0.gap - model(rate, { bd: 0.25 }).gap;
+  if (m.bd > 0) {
+    const d = m0.gap - m.gap;
+    setRes("bdRes", d >= 0 ? `Closes ${money(d)} of the gap per home, after the buydown's cost` : `Adds ${money(-d)} to the gap: the buydown costs more than it helps`, d >= 0 ? "good" : "bad");
+  } else setRes("bdRes", `Each 0.25% lower closes about ${money(per25)} per home, after its cost`);
+  const landRow = sources.find(x => x.land);
+  setRes("landRes", landRow ? `In the funding stack: ${money(landRow.amount)} per home (${STATUSES[landRow.status].toLowerCase()})`
+    : `Could close up to ${money(n("landCost"))} per home if the trust secures the land`, landRow && landRow.status === "confirmed" ? "good" : "");
+  setRes("cbRes", !co ? "Add a second household below to compare" :
+    lim && inc > lim ? `Over the ${esc(m.tierT.name.toLowerCase())} limit together: may not qualify for this home` :
+    `Still eligible together; a market-rate home budget rises to about ${money(marketPrice)}`, !co ? "" : lim && inc > lim ? "bad" : "good");
+  setRes("eqRes", eq > 0 ? `Closes ${money(eqGain)} of the gap per home; repay ${(eq * 100).toFixed(0)}% of the home's value later` : "Set a program share above 0% to see the effect", eq > 0 ? "good" : "");
+
+  $("heroFacts").innerHTML = `<li><span class="dot ok"></span>30-year rate <b>${rate.toFixed(2)}%</b>${$("rateMode").value === "custom" ? " (custom)" : ` · week of ${fmtDate(LATEST[0])}`}</li>
+    <li>Income limits <b>${esc(t.name)}</b> · ${fmtDate(t.effective)}</li><li>Formula <b>CA H&amp;S Code 50052.5</b></li><li class="warnfact">Sample family and home</li>`;
+  drawChart();
+  window.LAST = { m, open, conf, rate, homes };
+  window.renderPlain?.();
+  window.renderPlan?.();
+  window.renderPrograms?.();
+  window.renderInvolved?.();
+  window.drawMap?.();
+  $("srcList").innerHTML = `<a href="${LIMIT_TABLES[0].url}" target="_blank" rel="noopener">HCD 2026 State Income Limits</a> ·
+    <a href="${LIMIT_TABLES[2].url}" target="_blank" rel="noopener">HCD 2026 State HOME Income Limits</a> ·
+    <a href="${window.RATES.url}" target="_blank" rel="noopener">Freddie Mac PMMS via FRED</a> · CA Health &amp; Safety Code 50052.5 · Fictional Loan Estimate (doc 04)`;
+}
+
+// ---------- chart ----------
+function drawChart() {
+  const svg = $("chart");
+  const start = new Date(LATEST[0]); start.setFullYear(start.getFullYear() - win);
+  const pts = PTS.filter(p => new Date(p[0]) >= start);
+  const gaps = pts.map(p => model(p[1]).gap);
+  const rates = pts.map(p => p[1]);
+  const L = 62, R = 938, T1 = 16, B1 = 160, T2 = 200, B2 = 344;
+  const rMin = Math.floor(Math.min(...rates)), rMax = Math.ceil(Math.max(...rates));
+  const gMin = Math.min(...gaps), gMax = Math.max(...gaps);
+  const gStep = niceStep((gMax - gMin) || 1000);
+  const g0 = Math.floor(gMin / gStep) * gStep, g1 = Math.ceil(gMax / gStep) * gStep || g0 + gStep;
+  const t0 = new Date(pts[0][0]).getTime(), t1 = new Date(pts[pts.length - 1][0]).getTime();
+  const x = d => L + (new Date(d).getTime() - t0) / (t1 - t0 || 1) * (R - L);
+  const y1 = v => B1 - (v - rMin) / (rMax - rMin || 1) * (B1 - T1);
+  const y2 = v => B2 - (v - g0) / (g1 - g0 || 1) * (B2 - T2);
+  const path = (ys) => pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + ys[i].toFixed(1)).join("");
+  const r1 = rates.map(y1), r2 = gaps.map(y2);
+  let h = `<g class="grid">`;
+  const rStep = rMax - rMin > 6 ? 2 : 1;
+  for (let v = rMin; v <= rMax; v += rStep) h += `<line x1="${L}" x2="${R}" y1="${y1(v)}" y2="${y1(v)}"/>`;
+  for (let v = g0; v <= g1 + 1; v += gStep) h += `<line x1="${L}" x2="${R}" y1="${y2(v)}" y2="${y2(v)}"/>`;
+  h += `</g>`;
+  for (let v = rMin; v <= rMax; v += rStep) h += `<text x="${L - 8}" y="${y1(v) + 4}" text-anchor="end">${v}%</text>`;
+  for (let v = g0; v <= g1 + 1; v += gStep) h += `<text x="${L - 8}" y="${y2(v) + 4}" text-anchor="end">${v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "k"}</text>`;
+  h += `<text x="${L}" y="${T1 - 4}" style="fill:var(--fund)">30-yr rate</text><text x="${L}" y="${T2 - 6}" style="fill:var(--bad)">Gap per home at that rate</text>`;
+  // year ticks
+  const y0 = new Date(t0).getFullYear(), yN = new Date(t1).getFullYear(), yStep = Math.max(1, Math.ceil((yN - y0) / 8));
+  for (let yr = y0 + 1; yr <= yN; yr += yStep) { const xx = x(yr + "-01-01"); h += `<line x1="${xx}" x2="${xx}" y1="${B2}" y2="${B2 + 4}" style="stroke:var(--muted)"/><text x="${xx}" y="${B2 + 18}" text-anchor="middle">${yr}</text>`; }
+  h += `<path class="area" d="${path(r1)}L${R} ${B1}L${L} ${B1}Z"/><path class="rate" d="${path(r1)}"/>`;
+  h += `<path class="areab" d="${path(r2)}L${R} ${B2}L${L} ${B2}Z"/><path class="gapl" d="${path(r2)}"/>`;
+  const lx = x(pts[pts.length - 1][0]);
+  h += `<circle class="dot" cx="${lx}" cy="${r1[r1.length - 1]}" r="4" style="stroke:var(--fund)"/><circle class="dot" cx="${lx}" cy="${r2[r2.length - 1]}" r="4" style="stroke:var(--bad)"/>`;
+  h += `<g id="hover" visibility="hidden"><line class="hair" id="hl" y1="${T1}" y2="${B2}"/><circle class="dot" id="hd1" r="4" style="stroke:var(--fund)"/><circle class="dot" id="hd2" r="4" style="stroke:var(--bad)"/></g>`;
+  h += `<rect x="${L}" y="${T1}" width="${R - L}" height="${B2 - T1}" fill="transparent" id="hit"/>`;
+  svg.innerHTML = h;
+
+  // KPIs for the window
+  const iMin = rates.indexOf(Math.min(...rates)), iMax = rates.indexOf(Math.max(...rates));
+  $("rateKpis").innerHTML = [
+    ["Lowest rate in window", `${rates[iMin].toFixed(2)}%`, fmtDate(pts[iMin][0])],
+    ["Highest rate in window", `${rates[iMax].toFixed(2)}%`, fmtDate(pts[iMax][0])],
+    ["Gap at lowest → highest", `${money(gaps[iMin])} → ${money(gaps[iMax])}`, `swing ${money(gaps[iMax] - gaps[iMin])}`],
+    ["Each +0.25% adds", money(model(currentRate() + 0.25).gap - model(currentRate()).gap), "to the gap, at today's rate"],
+  ].map(([k, v, s]) => `<div><div class="k">${k}</div><div class="v">${v}</div><div class="k">${s}</div></div>`).join("");
+
+  const hit = $("hit");
+  const move = ev => {
+    const pt = svg.createSVGPoint(); const e = ev.touches ? ev.touches[0] : ev;
+    pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const tt = t0 + (p.x - L) / (R - L) * (t1 - t0);
+    let i = 0, best = Infinity; pts.forEach((q, k) => { const dd = Math.abs(new Date(q[0]).getTime() - tt); if (dd < best) { best = dd; i = k; } });
+    const xx = x(pts[i][0]);
+    $("hover").setAttribute("visibility", "visible");
+    $("hl").setAttribute("x1", xx); $("hl").setAttribute("x2", xx);
+    $("hd1").setAttribute("cx", xx); $("hd1").setAttribute("cy", r1[i]); $("hd2").setAttribute("cx", xx); $("hd2").setAttribute("cy", r2[i]);
+    $("tip").textContent = `Week of ${fmtDate(pts[i][0])}: rate ${rates[i].toFixed(2)}%, affordable price ${money(model(rates[i]).price)}, gap ${money(gaps[i])}`;
+  };
+  hit.addEventListener("mousemove", move); hit.addEventListener("touchstart", move, { passive: true }); hit.addEventListener("touchmove", move, { passive: true });
+  hit.addEventListener("mouseleave", () => $("hover").setAttribute("visibility", "hidden"));
+}
+function niceStep(range) { const raw = range / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+
+// ---------- wiring ----------
+FIELDS.forEach(k => $(k).addEventListener("input", calc));
+$("winSeg").addEventListener("click", e => { const w = e.target.dataset.w; if (!w) return; win = +w;
+  [...$("winSeg").children].forEach(b => b.setAttribute("aria-pressed", b === e.target)); drawChart(); });
+$("reset").onclick = () => load(SAMPLE);
+load(SAMPLE);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="docs.js"></script>
+<script src="projects.js"></script>
+<script src="atlas.js"></script>
+<script src="zips.js"></script>
+<script src="map.js"></script>
+<script src="programs.js"></script>
+<script src="plan.js"></script>
+<script src="involved.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="report.js"></script>
+<script src="chat.js"></script>
+<script src="i18n.js"></script>
